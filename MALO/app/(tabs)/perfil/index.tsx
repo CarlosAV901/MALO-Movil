@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -6,21 +6,39 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import logo from "@img/logoAmarillo.png";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { AuthContext } from "@app/context/AuthContext";
 
 export default function LoginScreen() {
-  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState<string>("");
+  const [contrasena, setPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const { login, isLoading } = useContext(AuthContext);
   const router = useRouter();
+
+  const handleLogin = async () => {
+    console.log("Email:", email);
+    console.log("contrasena:", contrasena);
+    try {
+      await login(email, contrasena);
+      router.push("/agregar");
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
+    }
+  };
+
   function TabBarIcon(props: {
     name: React.ComponentProps<typeof FontAwesome>["name"];
     color: string;
   }) {
     return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
   }
+
   return (
     <View style={styles.container}>
       <View style={styles.topSection}>
@@ -51,11 +69,18 @@ export default function LoginScreen() {
           <Image source={logo} style={styles.logo} />
         </View>
 
-        {/* Formulario de inicio de sesión */}
         <View style={styles.formContainer}>
           <View style={styles.formSection}>
-            <Text style={styles.label}>Usuario</Text>
-            <TextInput style={styles.input} />
+            <Text style={styles.label}>Correo</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              placeholder="Ingresa tu correo"
+              placeholderTextColor="#ccc"
+            />
 
             <View>
               <Text style={styles.label}>Contraseña</Text>
@@ -63,6 +88,10 @@ export default function LoginScreen() {
                 <TextInput
                   secureTextEntry={!showPassword}
                   style={styles.passwordInput}
+                  value={contrasena}
+                  onChangeText={setPassword}
+                  placeholder="Ingresa tu contraseña"
+                  placeholderTextColor="#ccc"
                 />
                 <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
@@ -79,8 +108,14 @@ export default function LoginScreen() {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Iniciar sesión</Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleLogin} 
+        disabled={isLoading} 
+      >
+        <Text style={styles.buttonText}>
+          {isLoading ? "Cargando..." : "Iniciar sesión"}
+        </Text>
       </TouchableOpacity>
 
       <View style={styles.linksContainer}>
@@ -88,7 +123,7 @@ export default function LoginScreen() {
           <Text style={styles.link}>Olvidé la contraseña</Text>
         </TouchableOpacity>
         <View style={styles.horizontalLine}></View>
-        <TouchableOpacity onPress={() => router.push(`/`)}>
+        <TouchableOpacity onPress={() => router.push(`/registro`)}>
           <Text style={styles.link}>No tienes cuenta?</Text>
         </TouchableOpacity>
       </View>
