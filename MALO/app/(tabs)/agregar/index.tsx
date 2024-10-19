@@ -3,16 +3,20 @@ import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { View } from '@app/components/Themed'; // Asegúrate de usar Themed.View si es necesario
 import EditScreenInfo from '@app/components/EditScreenInfo';
 import { AuthContext } from '@app/context/AuthContext';
+import {useLocalSearchParams} from 'expo-router'
 
 export default function TabOneScreen() {
   const authContext = useContext(AuthContext);
-  const { isAuthenticated, logout } = authContext!; // Asegúrate de manejar el caso donde el contexto sea undefined
+  const { isAuthenticated,email, logout } = authContext!; // Asegúrate de manejar el caso donde el contexto sea undefined
 
+  
+console.log(email)
   return (
     <View style={styles.container}>
       {isAuthenticated ? (
         <>
           <Text style={styles.title}>Bienvenido!</Text>
+          <Text style={styles.title}>correo {email}</Text>
           <Text style={styles.subtitle}>Ya has iniciado sesión</Text>
           <TouchableOpacity onPress={logout} style={styles.logoutButton}>
             <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
@@ -39,6 +43,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    color:'white'
   },
   subtitle: {
     fontSize: 16,

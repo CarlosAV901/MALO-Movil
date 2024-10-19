@@ -22,11 +22,11 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    console.log("Email:", email);
-    console.log("contrasena:", contrasena);
     try {
       await login(email, contrasena);
-      router.push("/agregar");
+      console.log("Email:", email);
+      console.log("contrasena:", contrasena);
+      router.push(`/agregar`);
     } catch (error: any) {
       Alert.alert("Error", error.message);
     }
