@@ -7,10 +7,13 @@ import {
   StyleSheet,
   Image,
   Alert,
+  KeyboardAvoidingView, 
+  Platform,
+  ScrollView
 } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Path } from "react-native-svg";
-import logo from "@img/logoAmarillo.png";
+import logo from "@img/logoBlanco.png";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { AuthContext } from "@app/context/AuthContext";
 
@@ -26,7 +29,7 @@ export default function LoginScreen() {
       await login(email, contrasena);
       console.log("Email:", email);
       console.log("contrasena:", contrasena);
-      router.push(`/agregar`);
+     router.push('/(Usuario)/Home/(tabs)/agregar');
     } catch (error: any) {
       Alert.alert("Error", error.message);
     }
@@ -40,7 +43,12 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+    style={styles.container}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0} 
+  >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View style={styles.topSection}>
         <Svg
           height="30%"
@@ -119,7 +127,7 @@ export default function LoginScreen() {
       </TouchableOpacity>
 
       <View style={styles.linksContainer}>
-        <TouchableOpacity onPress={() => router.push(`/`)}>
+        <TouchableOpacity onPress={() => router.push(`/olvide`)}>
           <Text style={styles.link}>Olvidé la contraseña</Text>
         </TouchableOpacity>
         <View style={styles.horizontalLine}></View>
@@ -127,7 +135,8 @@ export default function LoginScreen() {
           <Text style={styles.link}>No tienes cuenta?</Text>
         </TouchableOpacity>
       </View>
-    </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
   );
 }
 
@@ -142,7 +151,7 @@ const styles = StyleSheet.create({
   },
   wave: {
     position: "absolute",
-    bottom: -40,
+    bottom: -50,
   },
   logoContainer: {
     justifyContent: "center",

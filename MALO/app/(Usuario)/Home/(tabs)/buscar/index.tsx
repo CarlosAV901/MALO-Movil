@@ -3,12 +3,12 @@ import { StyleSheet } from 'react-native';
 import EditScreenInfo from '@app/components/EditScreenInfo';
 import { Text, View } from '@app/components/Themed';
 
-export default function perfil() {
+export default function buscar() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tab buscar</Text>
       <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+    
     </View>
   );
 }

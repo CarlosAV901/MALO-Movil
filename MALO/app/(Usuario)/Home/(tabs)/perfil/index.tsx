@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Path } from "react-native-svg";
-import logo from "@img/logoAmarillo.png";
+import logo from "@img/logoBlanco.png";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { AuthContext } from "@app/context/AuthContext";
 
@@ -26,7 +26,7 @@ export default function LoginScreen() {
     console.log("contrasena:", contrasena);
     try {
       await login(email, contrasena);
-      router.push("/agregar");
+      router.push("/(Usuario)/Home/(tabs)/agregar");
     } catch (error: any) {
       Alert.alert("Error", error.message);
     }
