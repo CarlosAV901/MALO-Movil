@@ -47,12 +47,14 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-
+///
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="login/index" options={{ headerShown: false }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(Usuario)/home/(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(Empresa)/home/(tabs)" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );

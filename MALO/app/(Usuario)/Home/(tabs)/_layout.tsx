@@ -27,19 +27,29 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+             title:'',
+            tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           }}
         />
         <Tabs.Screen
-          name="agregar"
+          name="buscar/index"
           options={{
-            tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+            title:'',
+            tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
           }}
         />
         <Tabs.Screen
-          name="buscar"
+          name="agregar/index"
           options={{
-            tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+             title:'',
+            tabBarIcon: ({ color }) => <TabBarIcon name="history" color={color} />,
+          }}
+        />
+         <Tabs.Screen
+          name="perfil/index"
+          options={{
+             title:'',
+            tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
           }}
         />
       </Tabs>
