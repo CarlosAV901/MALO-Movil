@@ -1,10 +1,24 @@
 import React from 'react';
 import { View, Text, StyleSheet, ImageBackground, ScrollView, TouchableOpacity } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 
 export default function Detalles () {
   const router = useRouter();
+  const {
+    multimediaContenido,
+    titulo,
+    descripcion,
+    salario_minimo,
+    empresa,
+    salario_maximo,
+    horario,
+    habilidades,
+    Ubicación
+  } = useLocalSearchParams();
+
+  // Convertir habilidades de string a array si es necesario
+  const habilidadesArray = habilidades ? habilidades.split(',') : [];
 
   return (
     <>
@@ -15,57 +29,43 @@ export default function Detalles () {
           <TouchableOpacity onPress={() => router.back()}>
             <FontAwesome name="arrow-left" size={24} color="white" />
           </TouchableOpacity>
-       
           <Text style={styles.headerText}>Detalles</Text>
         </View>
 
         <ImageBackground 
-          source={{ uri: 'https://www.laizquierdadiario.mx/IMG/arton136155.jpg?1565924685' }} 
+          source={{ uri: multimediaContenido || 'https://www.laizquierdadiario.mx/IMG/arton136155.jpg?1565924685' }} 
           style={styles.image}
         >
           <View style={styles.jobInfo}>
-  <View style={styles.row}>
-    <View style={styles.column}>
-      <Text style={styles.jobTitle}>Ayudante de Cocina</Text>
-    </View>
-    <View style={styles.column}>
-      <Text style={styles.jobType}>Tiempo Completo</Text>
-    </View>
-  </View>
+            <View style={styles.row}>
+              <View style={styles.column}>
+                <Text style={styles.jobTitle}>{titulo || 'Título no disponible'}</Text>
+              </View>
+              <View style={styles.column}>
+              <Text style={styles.detailItem}>Horario: {horario || 'No especificado'}</Text>
+              </View>
+            </View>
 
-  <View style={styles.row}>
-    <View style={styles.column}>
-      <Text style={styles.company}>La Duqueza</Text>
-    </View>
-    <View style={styles.column}>
-      <Text style={styles.salary}>$2,000 - 3,000</Text>
-    </View>
-  </View>
-</View>
+            <View style={styles.row}>
+              <View style={styles.column}>
+                <Text style={styles.company}>{empresa || 'Empresa no disponible'}</Text>
+              </View>
+              <View style={styles.column}>
+              <Text style={styles.detailItem}>Sueldo: ${salario_minimo || 'No especificado'} - ${salario_maximo || 'No especificado'}</Text>
+              </View>
+            </View>
+          </View>
         </ImageBackground>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Descripción</Text>
-          <Text style={styles.description}>
-            Lorem ipsum dolor sit amet consectetur adipiscing elit praesent, nullam laoreet ver más...
-          </Text>
+          <Text style={styles.description}>{descripcion || 'Descripción no disponible'}</Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Detalles principales</Text>
-          <Text style={styles.detailItem}>Tipo: Restaurante</Text>
-          <Text style={styles.detailItem}>Sexo: Indistinto</Text>
-          <Text style={styles.detailItem}>Edad: 30 a 50 años</Text>
-          <Text style={styles.detailItem}>Horario: 10:00 a.m a las 6:00 p.m</Text>
-          <Text style={styles.detailItem}>Sueldo base</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Habilidades necesarias</Text>
-          <Text style={styles.skillItem}>- Responsabilidad</Text>
-          <Text style={styles.skillItem}>- Iniciativa</Text>
-          <Text style={styles.skillItem}>- Trabajo en equipo</Text>
-          <Text style={styles.skillItem}>- si</Text>
+          <Text style={styles.detailItem}>Horario: {horario || 'No especificado'}</Text>
+          <Text style={styles.detailItem}>Sueldo: ${salario_minimo || 'No especificado'} - ${salario_maximo || 'No especificado'}</Text>
         </View>
 
         <TouchableOpacity style={styles.applyButton}>
@@ -75,6 +75,7 @@ export default function Detalles () {
     </>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

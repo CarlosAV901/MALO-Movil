@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useContext } from 'react';
+import { View, Text, TextInput, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator,RefreshControl } from 'react-native';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { AuthContext } from '@app/context/AuthContext'; // Asegúrate de que esta ruta sea correcta
 
 export default function JobSearchScreen() {
   const router = useRouter();
-  const [jobs, setJobs] = useState([]); // Estado para almacenar los empleos
-  const [loading, setLoading] = useState(true); // Estado para manejar la carga
+  const { user } = useContext(AuthContext); // Obtén el contexto para acceder a empresa_id
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); 
 
-  // Función para obtener los empleos de la API
   const fetchJobs = async () => {
     try {
       const response = await fetch("https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos");
@@ -16,42 +18,50 @@ export default function JobSearchScreen() {
         throw new Error('Error al obtener los empleos');
       }
       const data = await response.json();
-      setJobs(data); // Actualiza el estado con los empleos obtenidos
+      
+      // Filtra los empleos según el empresa_id del usuario
+      const filteredJobs = data.filter(job => job.empresa_id === user?.id);
+      setJobs(filteredJobs);
     } catch (error) {
       console.error(error);
       alert('Error al obtener los empleos');
     } finally {
-      setLoading(false); // Termina la carga
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchJobs(); // Llama a la función al montar el componente
+    fetchJobs();
   }, []);
-
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchJobs();
+    setRefreshing(false);
+  };
   const renderJobItem = ({ item }) => (
     <View style={styles.jobCard}>
       <Image source={{ uri: item.multimediaContenido }} style={styles.jobImage} />
       <View style={styles.jobDetails}>
         <Text style={styles.jobTitle}>{item.titulo}</Text>
         <Text style={styles.companyName}><FontAwesome name="check" size={20} color="gray" /> {item.descripcion}</Text>
-        <Text style={styles.applicants}>Postulados: {item.applicants}</Text>
-        <TouchableOpacity style={styles.applyButton}  onPress={() => router.push({
-            pathname: '/(Usuario)/detallePostulacion',
+        <TouchableOpacity
+          style={styles.applyButton}
+          onPress={() => router.push({
+            pathname: '/(Empresa)/home/(tabs)/actualizarEliminar/actualizar',
             params: {
               multimediaContenido: item.multimediaContenido,
               titulo: item.titulo,
               descripcion: item.descripcion,
               empresa: item.empresa,
               horario: item.horario,
-              ubicacion:item.ubicacion,
-              salario_minimo:item.salario_minimo,
-              salario_maximo:item.salario_maximo
+              ubicacion: item.ubicacion,
+              salario_minimo: item.salario_minimo,
+              salario_maximo: item.salario_maximo,
+              empleoId:item.empleoId
             }
-          
           })}
         >
-          <Text style={styles.applyButtonText}>Postular</Text>
+          <Text style={styles.applyButtonText}>Editar</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -59,7 +69,6 @@ export default function JobSearchScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <FontAwesome name="arrow-left" size={24} color="black" />
@@ -69,7 +78,6 @@ export default function JobSearchScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Search Filters */}
       <View style={styles.filters}>
         <View style={styles.filterItem}>
           <FontAwesome name="search" size={20} color="gray" />
@@ -91,15 +99,17 @@ export default function JobSearchScreen() {
         </View>
       </View>
 
-      {/* Job List */}
-      {loading ? ( // Muestra un indicador de carga mientras se obtienen los empleos
+       {loading ? (
         <ActivityIndicator size="large" color="#007BFF" />
       ) : (
         <FlatList
           data={jobs}
           renderItem={renderJobItem}
-          keyExtractor={(item) => item.empleoId} // Asegúrate de que `empleoId` sea único
+          keyExtractor={(item) => item.empleoId.toString()}
           contentContainerStyle={styles.jobList}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         />
       )}
     </View>
