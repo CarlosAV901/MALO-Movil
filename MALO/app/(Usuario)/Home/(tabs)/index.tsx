@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,54 +7,68 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
+  FlatList,
 } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 export default function BuscarEmpleoScreen() {
+  const router = useRouter();
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("Restaurantes");
 
-  const jobs = [
-    {
-      id: 1,
-      title: "Camarero",
-      company: "KFC (Empresa)",
-      salary: "$2000 - 3000",
-      category: "Restaurantes",
-      imageUrl:
-        "https://www.laizquierdadiario.mx/IMG/arton136155.jpg?1565924685",
-    },
-    {
-      id: 2,
-      title: "Recepcionista",
-      company: "Hotel XYZ",
-      salary: "$2500 - 3500",
-      category: "Restaurantes",
-      imageUrl:
-        "https://www.laizquierdadiario.mx/IMG/arton136155.jpg?1565924685",
-    },
-    {
-      id: 3,
-      title: "Cajero",
-      company: "Supermercado ABC",
-      salary: "$1800 - 2500",
-      category: "Supermercados",
-      imageUrl:
-        "https://www.laizquierdadiario.mx/IMG/arton136155.jpg?1565924685",
-    },
-    {
-      id: 4,
-      title: "Mecánico",
-      company: "Taller Mecánico 123",
-      salary: "$3000 - 4000",
-      category: "Mecanica",
-      imageUrl:
-        "https://www.laizquierdadiario.mx/IMG/arton136155.jpg?1565924685",
-    },
-  ];
+  // Función para obtener los empleos de la API
+  const fetchJobs = async () => {
+    try {
+      const response = await fetch("https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos");
+      if (!response.ok) {
+        throw new Error('Error al obtener los empleos');
+      }
+      const data = await response.json();
+      setJobs(data); // Actualiza el estado con los empleos obtenidos
+    } catch (error) {
+      console.error(error);
+      alert('Error al obtener los empleos');
+    } finally {
+      setLoading(false); // Termina la carga
+    }
+  };
+
+  useEffect(() => {
+    fetchJobs(); // Llama a la función al montar el componente
+  }, []);
 
   // Filtrar empleos según la categoría seleccionada
-  const filteredJobs = jobs.filter((job) => job.category === selectedCategory);
+  const filteredJobs = jobs.filter((job) => job.categoria === selectedCategory);
+
+  const renderJobItem = ({ item }) => (
+    <View style={styles.jobCard}>
+      <Image source={{ uri: item.multimediaContenido }} style={styles.jobImage} />
+      <Text style={styles.jobTitle}>{item.titulo}</Text>
+      <Text style={styles.jobCompany}>{item.empresa}</Text>
+      <Text style={styles.jobSalary}>{`${item.salario_minimo} - ${item.salario_maximo}`}</Text>
+      <TouchableOpacity
+        style={styles.applyButton}
+        onPress={() => router.push({
+          pathname: '/(Usuario)/detallePostulacion',
+          params: {
+            multimediaContenido: item.multimediaContenido,
+            titulo: item.titulo,
+            descripcion: item.descripcion,
+            empresa: item.empresa,
+            horario: item.horario,
+            ubicacion: item.ubicacion,
+            salario_minimo: item.salario_minimo,
+            salario_maximo: item.salario_maximo
+          }
+        })}
+      >
+        <Text style={styles.applyButtonText}>Postularme</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -74,69 +88,26 @@ export default function BuscarEmpleoScreen() {
       </View>
 
       {/* Tabs */}
-      <View>
-        <ScrollView horizontal style={styles.tabContainer}>
-          {[
-            "Restaurantes",
-            "Hoteles",
-            "Supermercados",
-            "Asiendas",
-            "Mecanica",
-            "Electricos",
-          ].map((category) => (
-            <TouchableOpacity
-              key={category}
-              onPress={() => setSelectedCategory(category)}
-            >
-              <Text
-                style={[
-                  styles.tab,
-                  selectedCategory === category && styles.activeTab,
-                ]}
-              >
-                {category}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+      <ScrollView horizontal style={styles.tabContainer}>
+        {["Restaurantes", "Hoteles", "Supermercados", "Asiendas", "Mecanica", "Electricos"].map((category) => (
+          <TouchableOpacity key={category} onPress={() => setSelectedCategory(category)}>
+            <Text style={[styles.tab, selectedCategory === category && styles.activeTab]}>{category}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
-      {/* Job Cards */}
-      <View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.jobList}>
-            {filteredJobs.map((job) => (
-              <View key={job.id} style={styles.jobCard}>
-                <Image source={{ uri: job.imageUrl }} style={styles.jobImage} />
-                <Text style={styles.jobTitle}>{job.title}</Text>
-                <Text style={styles.jobCompany}>{job.company}</Text>
-                <Text style={styles.jobSalary}>{job.salary}</Text>
-                <TouchableOpacity style={styles.applyButton}onPress={() => router.push('/(Usuario)/detallePostulacion')}>
-                  <Text style={styles.applyButtonText}>Postularme</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
-      <Text style={styles.title}>Te pueden Interesar</Text>
-      <View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.jobList}>
-            {filteredJobs.map((job) => (
-              <View key={job.id} style={styles.jobCard}>
-                <Image source={{ uri: job.imageUrl }} style={styles.jobImage} />
-                <Text style={styles.jobTitle}>{job.title}</Text>
-                <Text style={styles.jobCompany}>{job.company}</Text>
-                <Text style={styles.jobSalary}>{job.salary}</Text>
-                <TouchableOpacity style={styles.applyButton} onPress={() => router.push('/(Usuario)/detallePostulacion')}>
-                  <Text style={styles.applyButtonText}>Postularme</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
+      {/* Job List */}
+      {loading ? (
+        <ActivityIndicator size="large" color="#007BFF" />
+      ) : (
+        <FlatList
+          data={filteredJobs}
+          renderItem={renderJobItem}
+          keyExtractor={(item) => item.empleoId.toString()}
+          horizontal
+          contentContainerStyle={styles.jobList}
+        />
+      )}
     </View>
   );
 }
@@ -153,6 +124,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
+  headerText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
   filterItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -167,17 +143,12 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
   },
-  headerText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
   title: {
     fontSize: 30,
     marginTop: 20,
   },
   tabContainer: {
-    marginVertical: 5, // Cambiado a 5 para reducir el espacio
+    marginVertical: 5,
   },
   tab: {
     marginRight: 20,
@@ -190,15 +161,14 @@ const styles = StyleSheet.create({
     borderBottomColor: "#007bff",
   },
   jobList: {
-    flexDirection: "row",
-    marginTop: 1,
+    paddingBottom: 16,
   },
   jobCard: {
     backgroundColor: "#f2f2f2",
     padding: 10,
     borderRadius: 10,
     marginRight: 10,
-    width: 200, // Ajusta el ancho según sea necesario
+    width: 200,
   },
   jobImage: {
     width: "100%",

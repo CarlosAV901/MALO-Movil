@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { AuthContext } from "@app/context/AuthContext";
-import { useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 
 export default function ActualizarEmpleo() {
   const { user } = useContext(AuthContext);
@@ -69,6 +69,7 @@ export default function ActualizarEmpleo() {
       }
 
       Alert.alert("Éxito", "Empleo eliminado exitosamente");
+      router.push("/(Empresa)/home/(tabs)")
     } catch (error: any) {
       Alert.alert("Error", error.message);
     }
@@ -103,13 +104,16 @@ export default function ActualizarEmpleo() {
       }
 
       Alert.alert("Éxito", "Empleo actualizado exitosamente");
+      router.push("/(Empresa)/home/(tabs)")
     } catch (error: any) {
       Alert.alert("Error", error.message);
     }
   };
 
   return (
-    <ScrollView>
+    <>
+      <Stack.Screen options={{headerShown:true ,title:'Actualizar o Eliminar' }} />
+    <ScrollView style={{backgroundColor: '#F5F5F5',flex:1}}>
       <View style={styles.container}>
         <Text style={styles.label}>Título</Text>
         <TextInput style={styles.input} value={tituloA} onChangeText={setTitulo} />
@@ -148,6 +152,7 @@ export default function ActualizarEmpleo() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </>
   );
 };
 
