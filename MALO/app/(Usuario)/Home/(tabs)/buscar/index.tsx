@@ -56,9 +56,9 @@ export default function JobSearchScreen() {
   useEffect(() => {
     const delayFilter = setTimeout(() => {
       applyFilters();
-    }, 3000); // Retraso de 6 segundos
+    }, 6000); // Ajustado a 6 segundos
 
-    return () => clearTimeout(delayFilter); // Limpia el temporizador si se cambia el filtro
+    return () => clearTimeout(delayFilter);
   }, [searchTerm, location, scheduleFilter, salaryFilter, jobs]);
 
   const onRefresh = async () => {
@@ -87,10 +87,12 @@ export default function JobSearchScreen() {
     }
 
     if (salaryFilter) {
-      updatedJobs = updatedJobs.filter((job) => {
-        const salary = parseFloat(salaryFilter);
-        return job.salario_minimo <= salary && job.salario_maximo >= salary;
-      });
+      const salary = parseFloat(salaryFilter);
+      if (!isNaN(salary)) {
+        updatedJobs = updatedJobs.filter((job) => {
+          return job.salario_minimo <= salary && job.salario_maximo >= salary;
+        });
+      }
     }
 
     setFilteredJobs(updatedJobs);
@@ -167,14 +169,14 @@ export default function JobSearchScreen() {
         <View style={styles.filterRow}>
           <TouchableOpacity
             style={styles.filterButton}
-            onPress={() => setScheduleFilter("")}
+            onPress={() => setScheduleFilter("tiempo completo")} // Ejemplo de valor
           >
             <Text>Horario</Text>
             <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.filterButton}
-            onPress={() => setSalaryFilter("")}
+            onPress={() => setSalaryFilter("1000")} // Ejemplo de valor
           >
             <Text>Sueldo</Text>
             <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />

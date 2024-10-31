@@ -5,11 +5,11 @@
     "slug": "maloprueba",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logoBlanco.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/images/logoBlanco.png",
+      "image": "./assets/images/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#2D17E8"
     },
