@@ -1,11 +1,56 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from "react-native";
+import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { RegistroEmpresaService } from "@app/services/registrosServices";
 
 export default function RegisterForm() {
-  const [industry, setIndustry] = useState('');
+  const [nombre, setNombre] = useState("");
+  const [industria, setIndustry] = useState("");
+  const [ubicacion, setDireccion] = useState("");
+  const [contrasena, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+
   const router = useRouter();
+
+  const handleSubmit = async () => {
+    // Validación básica
+    if (!nombre || !industria || !ubicacion || !contrasena || !email) {
+      Alert.alert("Error", "Por favor, completa todos los campos");
+      return;
+    }
+
+    try {
+      const response = await RegistroEmpresaService(
+        nombre,
+        industria,
+        ubicacion,
+        contrasena,
+        email
+      );
+      Alert.alert(
+        "Éxito",
+        "Registro completado. Registro completado. Revisa tu correo y confirma tu cuenta"
+      );
+      console.log("Empresa registrada:", response);
+      router.push("/login"); // Redirige a la página de dashboard u otra página de tu elección
+    } catch (error) {
+      console.error("Error al registrar la empresa:", error);
+      Alert.alert(
+        "Error",
+        "Hubo un problema al registrar la empresa. Inténtalo de nuevo."
+      );
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.form}>
@@ -13,39 +58,64 @@ export default function RegisterForm() {
 
         <View style={styles.inputContainer}>
           <FontAwesome name="user" size={24} color="black" />
-          <TextInput style={styles.input} placeholder="Nombre" />
+          <TextInput
+            style={styles.input}
+            placeholder="Nombre"
+            value={nombre}
+            onChangeText={setNombre}
+          />
         </View>
 
         <View style={styles.inputContainer}>
           <FontAwesome name="industry" size={24} color="black" />
-          <TextInput style={styles.input} placeholder="Industria" value={industry} onChangeText={setIndustry} />
+          <TextInput
+            style={styles.input}
+            placeholder="Industria"
+            value={industria}
+            onChangeText={setIndustry}
+          />
         </View>
 
         <View style={styles.inputContainer}>
           <FontAwesome name="map-marker" size={24} color="black" />
-          <TextInput style={styles.input} placeholder="Dirección" />
+          <TextInput
+            style={styles.input}
+            placeholder="Dirección"
+            value={ubicacion}
+            onChangeText={setDireccion}
+          />
         </View>
 
         <View style={styles.inputContainer}>
           <FontAwesome name="envelope" size={24} color="black" />
-          <TextInput style={styles.input} placeholder="Correo Electrónico" keyboardType="email-address" />
+          <TextInput
+            style={styles.input}
+            placeholder="Correo Electrónico"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
         </View>
 
         <View style={styles.inputContainer}>
           <FontAwesome name="lock" size={24} color="black" />
-          <TextInput style={styles.input} placeholder="Contraseña" secureTextEntry />
+          <TextInput
+            style={styles.input}
+            placeholder="Contraseña"
+            secureTextEntry
+            value={contrasena}
+            onChangeText={setPassword}
+          />
         </View>
       </View>
 
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
         <Text style={styles.buttonText}>Continuar</Text>
       </TouchableOpacity>
 
       <View style={styles.linksContainer}>
         <View style={styles.horizontalLine}></View>
-        <TouchableOpacity onPress={() => router.push('/login')}>
-          <Text style={styles.link}>¿Ya tienes cuenta?</Text>
-        </TouchableOpacity>
+        <Text style={styles.link}>¿Ya tienes cuenta?</Text>
       </View>
     </ScrollView>
   );
@@ -54,34 +124,34 @@ export default function RegisterForm() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
-    backgroundColor: '#f2f2f2',
-    padding:40
+    backgroundColor: "#f2f2f2",
+    padding: 40,
   },
   form: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 20,
     padding: 30,
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 20,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderColor: '#ddd',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderColor: "#ddd",
     borderWidth: 2,
     borderRadius: 30,
     marginBottom: 15,
     paddingHorizontal: 10,
-    width: '100%',
+    width: "100%",
     height: 50,
   },
   input: {
@@ -95,7 +165,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     alignItems: "center",
     margin: 30,
-    width:300
+    width: 300,
   },
   buttonText: {
     color: "#fff",
