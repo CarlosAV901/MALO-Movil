@@ -1,24 +1,26 @@
 {
   "expo": {
+    "jsEngine": "jsc",
     "name": "MALO",
-    "slug": "malo",
+    "slug": "maloprueba",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logoBlanco.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/images/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#2D17E8"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/images/logoBlanco.png",
+        "backgroundColor": "#2D17E8"
       },
       "package": "com.marvin_mal.maloprueba"
     },
