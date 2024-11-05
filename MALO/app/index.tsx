@@ -25,7 +25,7 @@ export default function WelcomeScreen() {
   };
   const handleCompanyRegistration = () => {
     closeModal();
-    router.push('/(Empresa)/registro')
+    router.push('/(empresa)/registro')
   };
 
   const handleUserRegistration = () => {
