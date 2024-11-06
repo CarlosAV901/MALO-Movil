@@ -46,9 +46,6 @@ export default function RegisterForm() {
     estado: '',
     municipio: '',
     localidad: '',
-    habilidades: '',
-    descripcion: '',
-    imagenPerfil: ''
   });
 
   const validateForm = () => {
@@ -154,12 +151,12 @@ export default function RegisterForm() {
 
   const handleSubmit = async () => {
     // Validación básica
-    if (!nombre || !apellido || !email || !contrasena || !fecha_nacimiento || !telefono || !estados || !municipios || !localidades || !habilidades || !descripcion || imagenPerfil) {
+    if (!nombre || !apellido || !email || !contrasena || !fecha_nacimiento || !telefono || !estados || !municipios || !localidades ) {
       Alert.alert("Error", "Por favor, completa todos los campos");
       return;
     }
 
-    console.log(nombre, apellido, email, contrasena, fecha_nacimiento, telefono, estados, municipios, localidades, habilidades, descripcion, imagenPerfil)
+    console.log(nombre, apellido, email, contrasena, fecha_nacimiento, telefono, estados, municipios, localidades)
     try {
       const fechaNacimientoDate = typeof fecha_nacimiento === "string"
         ? fecha_nacimiento
@@ -176,9 +173,6 @@ export default function RegisterForm() {
         selectedState.nomgeo,         // Asegura que exista selectedState antes de acceder a nomgeo
         selectedMunicipality.nomgeo,  // Asegura que exista selectedMunicipality antes de acceder a nomgeo
         selectedLocality.nomgeo,
-        habilidades,
-        descripcion,
-        imagenPerfil
       );
 
       Alert.alert("Éxito", "Registro completado. Revisa tu correo y confirma tu cuenta");

@@ -23,7 +23,7 @@ export default function RegisterForm() {
 
   const handleSubmit = async () => {
     // Validación básica
-    if (!nombre || !industria || !ubicacion || !contrasena || !email) {
+    if (!nombre || !industria || !ubicacion || !email || !contrasena ) {
       Alert.alert("Error", "Por favor, completa todos los campos");
       return;
     }
@@ -33,8 +33,8 @@ export default function RegisterForm() {
         nombre,
         industria,
         ubicacion,
+        email,
         contrasena,
-        email
       );
       Alert.alert(
         "Éxito",
