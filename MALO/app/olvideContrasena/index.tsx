@@ -12,12 +12,12 @@ import {
   ScrollView,
   Switch,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import logo from "@img/logoBlanco.png";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { AuthContext } from "@app/context/AuthContext";
-
+import * as WebBrowser from 'expo-web-browser';
 export default function LoginScreen() {
   const [email, setEmail] = useState<string>("");
   const [contrasena, setPassword] = useState<string>("");
@@ -32,23 +32,25 @@ export default function LoginScreen() {
       await login(email, contrasena, isEmpresa);
 
       if (isEmpresa) {
-        router.replace("/(Empresa)/home/(tabs)/agregar");
+        router.push("/(Empresa)/home/(tabs)/agregar");
       } else {
-        router.replace("/(Usuario)/Home/(tabs)/agregar");
+        router.push("/(Usuario)/Home/(tabs)/agregar");
       }
     } catch (error: any) {
       Alert.alert("Error", error.message);
     } 
   };
 
-  function TabBarIcon(props: {
-    name: React.ComponentProps<typeof FontAwesome>["name"];
-    color: string;
-  }) {
-    return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-  }
+
+
+
+const openLink = async () => {
+  await WebBrowser.openBrowserAsync('https://malo-zeta.vercel.app/auth/forgot-password/cambiar-contrasena');
+};
 
   return (
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -96,57 +98,29 @@ export default function LoginScreen() {
                 placeholderTextColor="#ccc"
               />
 
-              <View>
-                <Text style={styles.label}>Contraseña</Text>
-                <View style={styles.passwordInputContainer}>
-                  <TextInput
-                    secureTextEntry={!showPassword}
-                    style={styles.passwordInput}
-                    value={contrasena}
-                    onChangeText={setPassword}
-                    placeholder="Ingresa tu contraseña"
-                    placeholderTextColor="#ccc"
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.iconContainer}
-                  >
-                    <TabBarIcon
-                      name={showPassword ? "eye-slash" : "eye"}
-                      color="#fff"
-                    />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.switchContainer}>
-                  <Text style={styles.switchLabel}>Soy una empresa</Text>
-                  <Switch value={isEmpresa} onValueChange={setIsEmpresa} />
-                </View>
-              </View>
+            
             </View>
           </View>
         </View>
 
         <TouchableOpacity
           style={styles.button}
-          onPress={handleLogin}
+          onPress={openLink}
           disabled={isLoading}
         >
           <Text style={styles.buttonText}>
-            {isLoading ? "Cargando..." : "Iniciar sesión"}
+            {isLoading ? "Cargando..." : "Enviar correo"}
           </Text>
         </TouchableOpacity>
-
         <View style={styles.linksContainer}>
-          <TouchableOpacity onPress={() => router.replace(`/olvideContrasena`)}>
-            <Text style={styles.link}>Olvidé la contraseña</Text>
-          </TouchableOpacity>
           <View style={styles.horizontalLine}></View>
-          <TouchableOpacity onPress={() => router.replace(`/registro`)}>
-            <Text style={styles.link}>No tienes cuenta?</Text>
+          <TouchableOpacity onPress={() => router.replace(`/login`)}>
+            <Text style={styles.link}>Regresar</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </>
   );
 }
 
