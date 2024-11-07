@@ -10,43 +10,52 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Switch,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import logo from "@img/logoBlanco.png";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { AuthContext } from "@app/context/AuthContext";
 import * as WebBrowser from 'expo-web-browser';
-export default function LoginScreen() {
+import axios from 'axios';
+
+export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState<string>("");
-  const [contrasena, setPassword] = useState<string>("");
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-  const { login, isLoading, user } = useContext(AuthContext);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
-  const [isEmpresa, setIsEmpresa] = useState<boolean>(false);
 
-  const handleLogin = async () => {
-    //router.push("/(Usuario)/home/(tabs)/agregar");
-     try {
-      await login(email, contrasena, isEmpresa);
-
-      if (isEmpresa) {
-        router.push("/(Empresa)/home/(tabs)/agregar");
+  const handlePasswordRecovery = async () => {
+    if (!email) {
+      Alert.alert("Error", "Por favor, ingresa tu correo electrónico.");
+      return;
+    }
+  
+    setIsLoading(true);
+    const recoveryApiUrl = "https://malo-backend.onrender.com/api/Recuperacion/solicitar-recuperacion";
+  
+    try {
+      const response = await axios.post(recoveryApiUrl, { email });
+      console.log("Respuesta de la API:", response.data); 
+  
+      const token = response.data; 
+      if (token) {
+        Alert.alert("Éxito", "Correo de recuperación enviado exitosamente.");
+        setIsLoading(false);
+        setTimeout(() => openRecoveryWeb(token), 2000);
       } else {
-        router.push("/(Usuario)/Home/(tabs)/agregar");
+        throw new Error("Token no encontrado en la respuesta.");
       }
-    } catch (error: any) {
-      Alert.alert("Error", error.message);
-    } 
+    } catch (error) {
+      setIsLoading(false);
+      console.log("Error:", error);
+      Alert.alert("Error", "Error al enviar el correo de recuperación. Inténtelo más tarde.");
+    }
   };
-
-
-
-
-const openLink = async () => {
-  await WebBrowser.openBrowserAsync('https://malo-zeta.vercel.app/auth/forgot-password/cambiar-contrasena');
-};
+  
+  const openRecoveryWeb = async (token: string) => {
+    const url = `https://malo-zeta.vercel.app/auth/forgot-password/cambiar-contrasena?token=${token}`;
+    await WebBrowser.openBrowserAsync(url);
+    console.log(url)
+  };
 
   return (
     <>
@@ -105,7 +114,7 @@ const openLink = async () => {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={openLink}
+          onPress={handlePasswordRecovery}
           disabled={isLoading}
         >
           <Text style={styles.buttonText}>
