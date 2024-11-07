@@ -9,7 +9,6 @@ export default function Agregar() {
   const authContext = useContext(AuthContext);
   const { isAuthenticated, email, logout } = authContext!; // Asegúrate de manejar el caso donde el contexto sea undefined
 
-  console.log(email);
   return (
     <View style={styles.container}>
       {isAuthenticated ? (

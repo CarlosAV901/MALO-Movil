@@ -34,7 +34,7 @@ export default function LoginScreen() {
       if (isEmpresa) {
         router.push("/(Empresa)/home/(tabs)/agregar");
       } else {
-        router.push("/(Usuario)/home/(tabs)/agregar");
+        router.push("/(Usuario)/Home/(tabs)/agregar");
       }
     } catch (error: any) {
       Alert.alert("Error", error.message);
