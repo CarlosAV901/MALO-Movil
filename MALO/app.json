@@ -5,11 +5,11 @@
     "slug": "maloprueba",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logoBlanco.png",
+    "icon": "./assets/images/faviconMALO.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/images/splash.png",
+      "image": "./assets/images/image.png",
       "resizeMode": "contain",
       "backgroundColor": "#2D17E8"
     },
@@ -20,7 +20,7 @@
       "versionCode": 1,
       "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/images/logoBlanco.png",
+        "foregroundImage": "./assets/images/faviconMALO.png",
         "backgroundColor": "#2D17E8"
       },
       "package": "com.marvin_mal.maloprueba"
@@ -28,7 +28,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/faviconMALO.png"
     },
     "plugins": [
       "expo-router"
