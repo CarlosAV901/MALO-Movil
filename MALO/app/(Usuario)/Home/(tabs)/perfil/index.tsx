@@ -1,203 +1,156 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import React, { useState, useContext } from "react";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { AuthContext } from "@app/context/AuthContext";
+import { router } from "expo-router";
+import axios from "axios";
 
-export default function CrearPostulacionScreen() {
-  const [selectedEmpresa, setSelectedEmpresa] = useState('');
-  const [detalles, setDetalles] = useState('');
-  const [salario, setSalario] = useState('');
-  const [horario, setHorario] = useState('');
-  const [habilidades, setHabilidades] = useState(['Skills aqui', 'Skills aqui', 'Skills aqui']);
-  const [nuevaHabilidad, setNuevaHabilidad] = useState(''); // Estado para la nueva habilidad
+export default function AgregarEmpleo() {
+  const { user } = useContext(AuthContext);
+  const [nombre, setNombre] = useState<string>("");
+  const [apellido, setApellido] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [telefono, setTelefono] = useState<string>("");
+  const [estado, setEstado] = useState<string>("");
+  const [municipio, setMunicipio] = useState<string>("");
+  const [localidad, setLocalidad] = useState<string>("");
+  const [habilidades, setHabilidades] = useState<string>("");
+  const [descripcion, setDescripcion] = useState<string>("");
+  const [imagenPerfil, setImagenPerfil] = useState<string>("");
 
-  const handleEliminarHabilidad = (index) => {
-    const nuevasHabilidades = habilidades.filter((_, i) => i !== index);
-    setHabilidades(nuevasHabilidades);
-  };
+  const handlePickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permisos requeridos", "Se necesitan permisos para acceder a la galería.");
+      return;
+    }
 
-  const handleAgregarHabilidad = () => {
-    if (nuevaHabilidad.trim()) {
-      setHabilidades([...habilidades, nuevaHabilidad]);
-      setNuevaHabilidad(''); // Limpiar el campo de entrada
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (!pickerResult.canceled) {
+      const imageUri = pickerResult.assets[0].uri;
+      setImagenPerfil(imageUri);
     }
   };
 
+  const handleSubmit = async () => {
+    if (!user?.token) {
+      Alert.alert("Error", "No se pudo encontrar el token de autenticación.");
+      return;
+    }
+  
+    const formData = new FormData();
+    formData.append('UsuarioId', user.id);
+    formData.append('nombre', nombre);
+    formData.append('email', email);
+    formData.append('apellido', apellido);
+    formData.append('telefono', telefono);
+    formData.append('estado', estado || "");
+    formData.append('municipio', municipio || "");
+    formData.append('localidad', localidad || "");
+    formData.append('descripcion', descripcion);
+    formData.append('habilidades', '3,7,10');
+  
+    // Convert the image URI to a File object if an image is selected
+    if (imagenPerfil) {
+      const uri = imagenPerfil;
+      const fileName = uri.split('/').pop(); // Extract file name from the URI
+      const fileType = fileName?.split('.').pop(); // Extract file extension
+      const file = {
+        uri: uri,
+        name: fileName,
+        type: `image/${fileType}`,
+      };
+      formData.append('archivo', file);
+    }
+  
+    try {
+      const response = await axios.post('https://malo-backend.onrender.com/api/Usuario/ActualizarUsuario', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data', // Make sure the correct content type is set
+          'Authorization': `Bearer ${user.token}`,
+        }
+      });
+      console.log(response);
+      Alert.alert("Éxito", "Usuario agregado exitosamente");
+      router.push("/(Empresa)/home/(tabs)");
+    } catch (error) {
+      console.error("Error de Axios:", error.response?.data || error.message);
+      Alert.alert("Error", error.response?.data?.message || "Error en la respuesta del servidor");
+    }
+  };
+  
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <FontAwesome name="arrow-left" size={24} color="black" />
+    <ScrollView style={{ backgroundColor: '#F5F5F5', flex: 1 }}>
+      <View style={styles.container}>
+        <Text style={styles.label}>Nombre</Text>
+        <TextInput style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Nombre" />
+        <Text style={styles.label}>Apellido</Text>
+        <TextInput style={styles.input} value={apellido} onChangeText={setApellido} placeholder="Apellido" />
+        <Text style={styles.label}>Email</Text>
+        <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email" keyboardType="email-address" />
+
+        <Text style={styles.label}>Imagen de Perfil</Text>
+        {imagenPerfil ? (
+          <Image source={{ uri: imagenPerfil }} style={{ width: 200, height: 200, marginBottom: 10 }} />
+        ) : (
+          <Text style={styles.placeholderText}>No se ha seleccionado ninguna imagen</Text>
+        )}
+        <TouchableOpacity style={styles.button} onPress={handlePickImage}>
+          <Text style={styles.buttonText}>Seleccionar Imagen</Text>
         </TouchableOpacity>
-        <Text>Genera nuevas oportunidades</Text>
-        <TouchableOpacity>
-          <FontAwesome name="user-circle" size={40} color="black" />
+
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+          <Text style={styles.submitButtonText}>Agregar Usuario</Text>
         </TouchableOpacity>
       </View>
-    
-      {/* Detalles del puesto */}
-      <Text style={styles.label}>Detalles del puesto</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Escribe los detalles del puesto..."
-        value={detalles}
-        onChangeText={setDetalles}
-      />
-
-      {/* Salario y Horario */}
-      <View style={styles.row}>
-        <View style={styles.column}>
-          <Text style={styles.label}>Salario</Text>
-          <TextInput
-            style={styles.inputSmall}
-            placeholder="Rango salario"
-            value={salario}
-            onChangeText={setSalario}
-          />
-          <TextInput
-            style={styles.inputSmall}
-            placeholder="Rango Salario"
-            value={salario}
-            onChangeText={setSalario}
-          />
-        </View>
-        <View style={styles.column}>
-          <Text style={styles.label}>Horario</Text>
-          <TextInput
-            style={styles.inputSmall}
-            placeholder="Horario am"
-            value={horario}
-            onChangeText={setHorario}
-          />
-          <TextInput
-            style={styles.inputSmall}
-            placeholder="Horario"
-            value={horario}
-            onChangeText={setHorario}
-          />
-        </View>
-      </View>
-
-      {/* Botón para subir imagen o video */}
-      <TouchableOpacity style={styles.uploadButton}>
-        <Text style={styles.uploadButtonText}>Subir imagen/video</Text>
-      </TouchableOpacity>
-
-      {/* Habilidades requeridas */}
-      <Text style={styles.label}>Habilidades Requeridas</Text>
-      <View style={styles.habilidadesContainer}>
-        {habilidades.map((habilidad, index) => (
-          <View key={index} style={styles.habilidad}>
-            <Text>{habilidad}</Text>
-            <TouchableOpacity onPress={() => handleEliminarHabilidad(index)}>
-              <Text style={styles.eliminarText}>✖</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-      </View>
-
-      {/* Input para nueva habilidad */}
-      <TextInput
-        style={styles.input}
-        placeholder="Escribe una nueva habilidad..."
-        value={nuevaHabilidad}
-        onChangeText={setNuevaHabilidad}
-      />
-      
-      {/* Botón para agregar nueva habilidad */}
-      <TouchableOpacity
-        style={styles.addSkillButton}
-        onPress={handleAgregarHabilidad}
-      >
-        <Text style={styles.addSkillText}>Agregar Habilidad</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.addSkillButton}
-      >
-        <Text style={styles.addSkillText}>Publicar</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    padding: 20,
   },
   label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginVertical: 10,
+    marginBottom: 5,
+    fontWeight: "bold",
   },
   input: {
+    borderColor: "#ccc",
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 30,
+    borderRadius: 5,
     padding: 10,
-    height: 40,
-    marginBottom: 20,
+    marginBottom: 15,
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  column: {
-    width: '48%',
-  },
-  inputSmall: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 30,
-    padding: 10,
-    height: 40,
-  },
-  uploadButton: {
-    backgroundColor: '#f2f2f2',
-    paddingVertical: 10,
-    borderRadius: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  uploadButtonText: {
-    fontSize: 16,
-    marginRight: 10,
-  },
-  habilidadesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  habilidad: {
-    backgroundColor: '#f2f2f2',
-    padding: 8,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 10,
+  placeholderText: {
     marginBottom: 10,
+    fontStyle: "italic",
+    color: "#888",
   },
-  eliminarText: {
-    marginLeft: 10,
-    color: '#ff0000',
-  },
-  addSkillButton: {
-    backgroundColor: '#007bff',
+  button: {
+    backgroundColor: "#007BFF",
     padding: 10,
-    borderRadius: 30,
-    alignItems: 'center',
+    borderRadius: 5,
+    alignItems: "center",
+    marginBottom: 15,
   },
-  addSkillText: {
-    color: '#fff',
-    fontSize: 16,
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  submitButton: {
+    backgroundColor: "#28A745",
+    padding: 15,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  submitButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
