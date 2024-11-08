@@ -10,33 +10,37 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Switch,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import logo from "@img/logoBlanco.png";
 import { AuthContext } from "@app/context/AuthContext";
-import * as WebBrowser from 'expo-web-browser';
-import axios from 'axios';
+import * as WebBrowser from "expo-web-browser";
+import axios from "axios";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
+  const [isEmpresa, setIsEmpresa] = useState<boolean>(false);
 
   const handlePasswordRecovery = async () => {
     if (!email) {
       Alert.alert("Error", "Por favor, ingresa tu correo electrónico.");
       return;
     }
-  
+
     setIsLoading(true);
-    const recoveryApiUrl = "https://malo-backend.onrender.com/api/Recuperacion/solicitar-recuperacion";
-  
+    const recoveryApiUrl = isEmpresa
+      ? "https://malo-backend-empresas.onrender.com/api/Recuperacion/solicitar-recuperacion"
+      : "https://malo-backend.onrender.com/api/Recuperacion/solicitar-recuperacion";
+
     try {
       const response = await axios.post(recoveryApiUrl, { email });
-      console.log("Respuesta de la API:", response.data); 
-  
-      const token = response.data; 
+      console.log("Respuesta de la API:", response.data);
+
+      const token = response.data;
       if (token) {
         Alert.alert("Éxito", "Correo de recuperación enviado exitosamente.");
         setIsLoading(false);
@@ -47,91 +51,96 @@ export default function ForgotPasswordScreen() {
     } catch (error) {
       setIsLoading(false);
       console.log("Error:", error);
-      Alert.alert("Error", "Error al enviar el correo de recuperación. Inténtelo más tarde.");
+      Alert.alert(
+        "Error",
+        "Error al enviar el correo de recuperación. Inténtelo más tarde."
+      );
     }
   };
-  
+
   const openRecoveryWeb = async (token: string) => {
     const url = `https://malo-zeta.vercel.app/auth/forgot-password/cambiar-contrasena?token=${token}`;
     await WebBrowser.openBrowserAsync(url);
     setTimeout(() => {
       WebBrowser.dismissBrowser();
     }, 15000);
-  
   };
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={styles.topSection}>
-          <Svg
-            height="30%"
-            width="100%"
-            viewBox="0 0 1440 320"
-            style={styles.wave}
-          >
-            <Path
-              fill="#fff"
-              d="M0,224L48,213.3C96,203,192,181,288,160C384,139,480,117,576,138.7C672,160,768,224,864,213.3C960,203,1056,117,1152,101.3C1248,85,1344,139,1392,165.3L1440,192V320H1392C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320H0Z"
-            />
-          </Svg>
-          <Svg
-            height="30%"
-            width="100%"
-            viewBox="0 0 1440 320"
-            style={styles.wave}
-          >
-            <Path
-              fill="#B4C5E4"
-              d="M -1 218 L 48 213.3 C 96 203 192 181 288 160 C 384 139 480 117 576 138.7 C 672 160 768 224 864 213.3 C 960 203 1056 117 1152 101.3 C 1248 85 1344 139 1392 165.3 L 1440 192 V 320 H 1392 C 1344 320 1248 320 1135 302 C 997 290 960 210 863 215 C 761 224 671 160 576 140 C 476 118 399 136 286 161 C 119 197 117 198 49 215 H 0 Z"
-            />
-          </Svg>
-
-          <View style={styles.logoContainer}>
-            <Image source={logo} style={styles.logo} />
-          </View>
-
-          <View style={styles.formContainer}>
-            <View style={styles.formSection}>
-              <Text style={styles.label}>Correo</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                placeholder="Ingresa tu correo"
-                placeholderTextColor="#ccc"
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+          <View style={styles.topSection}>
+            <Svg
+              height="30%"
+              width="100%"
+              viewBox="0 0 1440 320"
+              style={styles.wave}
+            >
+              <Path
+                fill="#fff"
+                d="M0,224L48,213.3C96,203,192,181,288,160C384,139,480,117,576,138.7C672,160,768,224,864,213.3C960,203,1056,117,1152,101.3C1248,85,1344,139,1392,165.3L1440,192V320H1392C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320H0Z"
               />
+            </Svg>
+            <Svg
+              height="30%"
+              width="100%"
+              viewBox="0 0 1440 320"
+              style={styles.wave}
+            >
+              <Path
+                fill="#B4C5E4"
+                d="M -1 218 L 48 213.3 C 96 203 192 181 288 160 C 384 139 480 117 576 138.7 C 672 160 768 224 864 213.3 C 960 203 1056 117 1152 101.3 C 1248 85 1344 139 1392 165.3 L 1440 192 V 320 H 1392 C 1344 320 1248 320 1135 302 C 997 290 960 210 863 215 C 761 224 671 160 576 140 C 476 118 399 136 286 161 C 119 197 117 198 49 215 H 0 Z"
+              />
+            </Svg>
 
-            
+            <View style={styles.logoContainer}>
+              <Image source={logo} style={styles.logo} />
+            </View>
+
+            <View style={styles.formContainer}>
+              <View style={styles.formSection}>
+                <Text style={styles.label}>Correo</Text>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  placeholder="Ingresa tu correo"
+                  placeholderTextColor="#ccc"
+                />
+
+                <View style={styles.switchContainer}>
+                  <Text style={styles.switchLabel}>Soy una empresa</Text>
+                  <Switch value={isEmpresa} onValueChange={setIsEmpresa} />
+                </View>
+              </View>
             </View>
           </View>
-        </View>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handlePasswordRecovery}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? "Cargando..." : "Enviar correo"}
-          </Text>
-        </TouchableOpacity>
-        <View style={styles.linksContainer}>
-          <View style={styles.horizontalLine}></View>
-          <TouchableOpacity onPress={() => router.replace(`/login`)}>
-            <Text style={styles.link}>Regresar</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handlePasswordRecovery}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? "Cargando..." : "Enviar correo"}
+            </Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <View style={styles.linksContainer}>
+            <View style={styles.horizontalLine}></View>
+            <TouchableOpacity onPress={() => router.replace(`/login`)}>
+              <Text style={styles.link}>Regresar</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 }
@@ -240,6 +249,6 @@ const styles = StyleSheet.create({
   },
   switchLabel: {
     marginRight: 10,
-    color:"#fff"
+    color: "#fff",
   },
 });

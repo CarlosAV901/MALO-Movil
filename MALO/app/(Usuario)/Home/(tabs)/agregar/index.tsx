@@ -7,14 +7,15 @@ import { router, useLocalSearchParams } from "expo-router";
 
 export default function Agregar() {
   const authContext = useContext(AuthContext);
-  const { isAuthenticated, email, logout } = authContext!; // Asegúrate de manejar el caso donde el contexto sea undefined
+  const { user } = useContext(AuthContext);
+  const { isAuthenticated, logout } = authContext!; // Asegúrate de manejar el caso donde el contexto sea undefined
 
   return (
     <View style={styles.container}>
       {isAuthenticated ? (
         <>
           <Text style={styles.title}>Bienvenido!</Text>
-          <Text style={styles.title}>correo {email}</Text>
+          <Text style={styles.title}>correo {user?.email}</Text>
           <Text style={styles.subtitle}>Ya has iniciado sesión</Text>
           <TouchableOpacity
             onPress={() => {
