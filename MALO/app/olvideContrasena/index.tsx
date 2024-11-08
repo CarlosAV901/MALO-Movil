@@ -54,7 +54,10 @@ export default function ForgotPasswordScreen() {
   const openRecoveryWeb = async (token: string) => {
     const url = `https://malo-zeta.vercel.app/auth/forgot-password/cambiar-contrasena?token=${token}`;
     await WebBrowser.openBrowserAsync(url);
-    console.log(url)
+    setTimeout(() => {
+      WebBrowser.dismissBrowser();
+    }, 15000);
+  
   };
 
   return (

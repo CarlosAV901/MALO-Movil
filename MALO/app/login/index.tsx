@@ -17,6 +17,7 @@ import Svg, { Path } from "react-native-svg";
 import logo from "@img/logoBlanco.png";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { AuthContext } from "@app/context/AuthContext";
+import * as Notifications from 'expo-notifications';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState<string>("");
@@ -26,8 +27,37 @@ export default function LoginScreen() {
   const router = useRouter();
   const [isEmpresa, setIsEmpresa] = useState<boolean>(false);
 
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+  const requestPermissions = async () => {
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert("Permiso requerido", "Necesitas permisos de notificación para recibirlas.");
+      return false;
+    }
+    return true;
+  };
+  
+  const sendTestNotification = async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Bienvenido a MALO",
+        body: "Genial ahora busca o postula un trabajo",
+      },
+      trigger: { seconds: 2 },
+    });
+  };
+  
   const handleLogin = async () => {
     //router.push("/(Usuario)/home/(tabs)/agregar");
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+    sendTestNotification();
      try {
       await login(email, contrasena, isEmpresa);
 
