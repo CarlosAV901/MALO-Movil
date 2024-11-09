@@ -14,11 +14,21 @@
       "backgroundColor": "#2D17E8"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "cbcbd1cd-af32-4dc1-9735-dc020bd00b71",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Esta app necesita acceso a la cámara para tomar fotos.",
+        "NSPhotoLibraryUsageDescription": "Esta app necesita acceso a la galería para subir imágenes.",
+        "UIBackgroundModes": ["fetch"]
+      }
     },
     "android": {
       "versionCode": 1,
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"],
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/faviconMALO.png",
         "backgroundColor": "#2D17E8"
@@ -30,9 +40,7 @@
       "output": "static",
       "favicon": "./assets/images/faviconMALO.png"
     },
-    "plugins": [
-      "expo-router"
-    ],
+    "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true
     },

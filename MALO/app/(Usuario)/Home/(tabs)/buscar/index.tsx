@@ -9,6 +9,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  Modal,
 } from "react-native";
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -25,20 +26,19 @@ export default function JobSearchScreen() {
   const [location, setLocation] = useState("");
   const [scheduleFilter, setScheduleFilter] = useState("");
   const [salaryFilter, setSalaryFilter] = useState("");
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [isSalaryOpen, setIsSalaryOpen] = useState(false);
 
+  const scheduleOptions = ["Tiempo completo", "Medio tiempo", "Freelance","Noche",""];
+  const salaryOptions = ["1000", "2000", "3000",""];
+  
   const fetchJobs = async () => {
     try {
-      const response = await fetch(
-        "https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos"
-      );
-      if (!response.ok) {
-        throw new Error("Error al obtener los empleos");
-      }
-      const data = await response.json();
+      const response = await fetch("https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos");
+      if (!response.ok) throw new Error("Error al obtener los empleos");
 
-      const filteredByEmpresa = data.filter(
-        (job) => job.empresa_id
-      );
+      const data = await response.json();
+      const filteredByEmpresa = data.filter((job) => job.empresa_id);
       setJobs(filteredByEmpresa);
       setFilteredJobs(filteredByEmpresa);
     } catch (error) {
@@ -54,10 +54,7 @@ export default function JobSearchScreen() {
   }, []);
 
   useEffect(() => {
-    const delayFilter = setTimeout(() => {
-      applyFilters();
-    }, 6000); // Ajustado a 6 segundos
-
+    const delayFilter = setTimeout(() => applyFilters(), 6000);
     return () => clearTimeout(delayFilter);
   }, [searchTerm, location, scheduleFilter, salaryFilter, jobs]);
 
@@ -69,41 +66,19 @@ export default function JobSearchScreen() {
 
   const applyFilters = () => {
     let updatedJobs = jobs;
-
-    if (searchTerm) {
-      updatedJobs = updatedJobs.filter((job) =>
-        job.titulo.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (location) {
-      updatedJobs = updatedJobs.filter((job) =>
-        job.ubicacion.toLowerCase().includes(location.toLowerCase())
-      );
-    }
-
-    if (scheduleFilter) {
-      updatedJobs = updatedJobs.filter((job) => job.horario === scheduleFilter);
-    }
-
+    if (searchTerm) updatedJobs = updatedJobs.filter((job) => job.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (location) updatedJobs = updatedJobs.filter((job) => job.ubicacion.toLowerCase().includes(location.toLowerCase()));
+    if (scheduleFilter) updatedJobs = updatedJobs.filter((job) => job.horario === scheduleFilter);
     if (salaryFilter) {
       const salary = parseFloat(salaryFilter);
-      if (!isNaN(salary)) {
-        updatedJobs = updatedJobs.filter((job) => {
-          return job.salario_minimo <= salary && job.salario_maximo >= salary;
-        });
-      }
+      if (!isNaN(salary)) updatedJobs = updatedJobs.filter((job) => job.salario_minimo <= salary && job.salario_maximo >= salary);
     }
-
     setFilteredJobs(updatedJobs);
   };
 
   const renderJobItem = ({ item }) => (
     <View style={styles.jobCard}>
-      <Image
-        source={{ uri: item.multimediaContenido }}
-        style={styles.jobImage}
-      />
+      <Image source={{ uri: item.multimediaContenido }} style={styles.jobImage} />
       <View style={styles.jobDetails}>
         <Text style={styles.jobTitle}>{item.titulo}</Text>
         <Text style={styles.companyName}>
@@ -132,6 +107,27 @@ export default function JobSearchScreen() {
         </TouchableOpacity>
       </View>
     </View>
+  );
+
+  const renderDropdown = (options, setFilter, isOpen, setIsOpen) => (
+    <Modal visible={isOpen} transparent animationType="fade">
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          {options.map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={styles.modalOption}
+              onPress={() => {
+                setFilter(option);
+                setIsOpen(false);
+              }}
+            >
+              <Text>{option}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </Modal>
   );
 
   return (
@@ -167,23 +163,22 @@ export default function JobSearchScreen() {
           />
         </View>
         <View style={styles.filterRow}>
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setScheduleFilter("tiempo completo")} // Ejemplo de valor
-          >
-            <Text>Horario</Text>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setIsScheduleOpen(true)}>
+            <Text>{scheduleFilter || "Horario"}</Text>
             <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setSalaryFilter("1000")} // Ejemplo de valor
-          >
-            <Text>Sueldo</Text>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setIsSalaryOpen(true)}>
+            <Text>{salaryFilter || "Sueldo"}</Text>
             <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* Dropdown Modals */}
+      {renderDropdown(scheduleOptions, setScheduleFilter, isScheduleOpen, setIsScheduleOpen)}
+      {renderDropdown(salaryOptions, setSalaryFilter, isSalaryOpen, setIsSalaryOpen)}
+
+      {/* Job List */}
       {loading ? (
         <ActivityIndicator size="large" color="#007BFF" />
       ) : (
@@ -192,15 +187,12 @@ export default function JobSearchScreen() {
           renderItem={renderJobItem}
           keyExtractor={(item) => item.empleoId}
           contentContainerStyle={styles.jobList}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
       )}
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -286,5 +278,23 @@ const styles = StyleSheet.create({
   applyButtonText: {
     color: "#FFF",
     textAlign: "center",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "white",
+    borderRadius: 8,
+    paddingVertical: 10,
+  },
+  modalOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
+    alignItems: "center",
   },
 });
