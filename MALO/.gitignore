@@ -72,6 +72,8 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
-
+# Ignorar carpetas nativas para EAS Build
+/android
+/ios
 expo-env.d.ts
 # @end expo-cli
