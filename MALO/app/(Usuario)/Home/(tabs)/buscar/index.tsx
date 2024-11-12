@@ -29,12 +29,21 @@ export default function JobSearchScreen() {
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [isSalaryOpen, setIsSalaryOpen] = useState(false);
 
-  const scheduleOptions = ["Tiempo completo", "Medio tiempo", "Freelance","Noche",""];
-  const salaryOptions = ["1000", "2000", "3000",""];
-  
+  const scheduleOptions = [
+    "Tiempo completo",
+    "Medio tiempo",
+    "Dia",
+    "Noche",
+    "",
+  ];
+  const salaryOptions = ["1000", "2000", "3000", ""];
+  const authContext = useContext(AuthContext);
+  const { isAuthenticated, logout } = authContext!;
   const fetchJobs = async () => {
     try {
-      const response = await fetch("https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos");
+      const response = await fetch(
+        "https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos"
+      );
       if (!response.ok) throw new Error("Error al obtener los empleos");
 
       const data = await response.json();
@@ -66,45 +75,67 @@ export default function JobSearchScreen() {
 
   const applyFilters = () => {
     let updatedJobs = jobs;
-    if (searchTerm) updatedJobs = updatedJobs.filter((job) => job.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
-    if (location) updatedJobs = updatedJobs.filter((job) => job.ubicacion.toLowerCase().includes(location.toLowerCase()));
-    if (scheduleFilter) updatedJobs = updatedJobs.filter((job) => job.horario === scheduleFilter);
+    if (searchTerm)
+      updatedJobs = updatedJobs.filter((job) =>
+        job.titulo.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    if (location)
+      updatedJobs = updatedJobs.filter((job) =>
+        job.ubicacion.toLowerCase().includes(location.toLowerCase())
+      );
+    if (scheduleFilter)
+      updatedJobs = updatedJobs.filter((job) => job.horario === scheduleFilter);
     if (salaryFilter) {
       const salary = parseFloat(salaryFilter);
-      if (!isNaN(salary)) updatedJobs = updatedJobs.filter((job) => job.salario_minimo <= salary && job.salario_maximo >= salary);
+      if (!isNaN(salary))
+        updatedJobs = updatedJobs.filter(
+          (job) => job.salario_minimo <= salary && job.salario_maximo >= salary
+        );
     }
     setFilteredJobs(updatedJobs);
   };
 
   const renderJobItem = ({ item }) => (
     <View style={styles.jobCard}>
-      <Image source={{ uri: item.multimediaContenido }} style={styles.jobImage} />
+      <Image
+        source={{ uri: item.multimediaContenido }}
+        style={styles.jobImage}
+      />
       <View style={styles.jobDetails}>
         <Text style={styles.jobTitle}>{item.titulo}</Text>
         <Text style={styles.companyName}>
           <FontAwesome name="check" size={20} color="gray" /> {item.descripcion}
         </Text>
         <Text style={styles.applicants}>Postulados: {item.applicants}</Text>
-        <TouchableOpacity
-          style={styles.applyButton}
-          onPress={() =>
-            router.push({
-              pathname: "/(Usuario)/detallePostulacion",
-              params: {
-                multimediaContenido: item.multimediaContenido,
-                titulo: item.titulo,
-                descripcion: item.descripcion,
-                empresa: item.empresa,
-                horario: item.horario,
-                ubicacion: item.ubicacion,
-                salario_minimo: item.salario_minimo,
-                salario_maximo: item.salario_maximo,
-              },
-            })
-          }
-        >
-          <Text style={styles.applyButtonText}>Postular</Text>
-        </TouchableOpacity>
+        {isAuthenticated ? (
+          <TouchableOpacity
+            style={styles.applyButton}
+            onPress={() =>
+              router.push({
+                pathname: "/(Usuario)/detallePostulacion",
+                params: {
+                  multimediaContenido: item.multimediaContenido,
+                  titulo: item.titulo,
+                  descripcion: item.descripcion,
+                  empresa: item.empresa,
+                  horario: item.horario,
+                  ubicacion: item.ubicacion,
+                  salario_minimo: item.salario_minimo,
+                  salario_maximo: item.salario_maximo,
+                },
+              })
+            }
+          >
+            <Text style={styles.applyButtonText}>Postular</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.applyButton}
+            onPress={() =>
+              router.push("/login")}>
+            <Text style={styles.applyButtonText}>Inicia Sesion</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -163,11 +194,17 @@ export default function JobSearchScreen() {
           />
         </View>
         <View style={styles.filterRow}>
-          <TouchableOpacity style={styles.filterButton} onPress={() => setIsScheduleOpen(true)}>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setIsScheduleOpen(true)}
+          >
             <Text>{scheduleFilter || "Horario"}</Text>
             <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.filterButton} onPress={() => setIsSalaryOpen(true)}>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setIsSalaryOpen(true)}
+          >
             <Text>{salaryFilter || "Sueldo"}</Text>
             <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
           </TouchableOpacity>
@@ -175,8 +212,18 @@ export default function JobSearchScreen() {
       </View>
 
       {/* Dropdown Modals */}
-      {renderDropdown(scheduleOptions, setScheduleFilter, isScheduleOpen, setIsScheduleOpen)}
-      {renderDropdown(salaryOptions, setSalaryFilter, isSalaryOpen, setIsSalaryOpen)}
+      {renderDropdown(
+        scheduleOptions,
+        setScheduleFilter,
+        isScheduleOpen,
+        setIsScheduleOpen
+      )}
+      {renderDropdown(
+        salaryOptions,
+        setSalaryFilter,
+        isSalaryOpen,
+        setIsSalaryOpen
+      )}
 
       {/* Job List */}
       {loading ? (
@@ -187,7 +234,9 @@ export default function JobSearchScreen() {
           renderItem={renderJobItem}
           keyExtractor={(item) => item.empleoId}
           contentContainerStyle={styles.jobList}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         />
       )}
     </View>

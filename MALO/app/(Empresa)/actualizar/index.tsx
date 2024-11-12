@@ -1,12 +1,22 @@
 import React, { useState, useContext, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+  ScrollView,
+  Image,
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { AuthContext } from "@app/context/AuthContext";
 import { router, Stack, useLocalSearchParams } from "expo-router";
+import axios from "axios";
 
 export default function ActualizarEmpleo() {
   const { user } = useContext(AuthContext);
-  
+
   // Obtener los parámetros iniciales
   const {
     empleoId,
@@ -22,8 +32,12 @@ export default function ActualizarEmpleo() {
   const [tituloA, setTitulo] = useState<string>(titulo || "");
   const [descripcionA, setDescripcion] = useState<string>(descripcion || "");
   const [ubicacionA, setUbicacion] = useState<string>(ubicacion || "");
-  const [salarioMinimoA, setSalarioMinimo] = useState<number>(salario_minimo ? Number(salario_minimo) : 0);
-  const [salarioMaximoA, setSalarioMaximo] = useState<number>(salario_maximo ? Number(salario_maximo) : 0);
+  const [salarioMinimoA, setSalarioMinimo] = useState<number>(
+    salario_minimo ? Number(salario_minimo) : 0
+  );
+  const [salarioMaximoA, setSalarioMaximo] = useState<number>(
+    salario_maximo ? Number(salario_maximo) : 0
+  );
   const [horarioA, setHorario] = useState<string>(horario || "");
   const [multimediaContenidoA, setMultimediaContenido] = useState<string>("");
 
@@ -37,9 +51,13 @@ export default function ActualizarEmpleo() {
   }, [titulo, descripcion, ubicacion, salario_minimo, salario_maximo, horario]);
 
   const handlePickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
-      Alert.alert("Permisos requeridos", "Se necesitan permisos para acceder a la galería.");
+      Alert.alert(
+        "Permisos requeridos",
+        "Se necesitan permisos para acceder a la galería."
+      );
       return;
     }
 
@@ -56,105 +74,157 @@ export default function ActualizarEmpleo() {
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`https://malo-backend-empleos.onrender.com/api/Empleo/DeleteEmpleoById`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ empleoId: empleoId }),
-      });
+      const response = await fetch(
+        `https://malo-backend-empleos.onrender.com/api/Empleo/DeleteEmpleoById`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ empleoId: empleoId }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Error en la respuesta del servidor");
       }
 
       Alert.alert("Éxito", "Empleo eliminado exitosamente");
-      router.push("/(Empresa)/home/(tabs)")
+      router.push("/(Empresa)/home/(tabs)");
     } catch (error: any) {
       Alert.alert("Error", error.message);
     }
   };
 
   const handleSubmit = async () => {
-    const multimediaNombre = multimediaContenidoA.split('/').pop();
-    const multimediaTipo = 'image/jpeg';
+
+    const formData = new FormData();
+    formData.append("Empleo_id", String(empleoId));
+    formData.append("titulo", tituloA);
+    formData.append("descripcion", descripcionA);
+    formData.append("ubicacion", ubicacionA);
+    formData.append("salario_minimo", String(salarioMinimoA));
+    formData.append("salario_maximo", String(salarioMaximoA));
+    formData.append("horario", horarioA);
+
+    if (multimediaContenidoA) {
+      const uri = multimediaContenidoA;
+      const fileName = uri.split('/').pop(); // Extract file name from the URI
+      const fileType = fileName?.split('.').pop(); // Extract file extension
+      const file = {
+        uri: uri,
+        name: fileName,
+        type: `image/${fileType}`,
+      };
+      formData.append('archivo', file);
+    }
+
+    console.log(formData); // Revisa el contenido del formData antes de enviar
 
     try {
-      const response = await fetch(`https://malo-backend-empleos.onrender.com/api/Empleo/UpdateEmpleoById`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          empleo_id: empleoId,
-          titulo: tituloA,
-          descripcion: descripcionA,
-          ubicacion: ubicacionA,
-          salario_minimo: salarioMinimoA,
-          salario_maximo: salarioMaximoA,
-          horario: horarioA,
-          multimediaContenido: multimediaContenidoA,
-          multimediaNombre,
-          multimediaTipo,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error en la respuesta del servidor");
-      }
-
+      const response = await axios.post(
+        "https://malo-backend-empleos.onrender.com/api/Empleo/UpdateEmpleoById",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      console.log(response);
       Alert.alert("Éxito", "Empleo actualizado exitosamente");
-      router.push("/(Empresa)/home/(tabs)")
-    } catch (error: any) {
-      Alert.alert("Error", error.message);
+      router.push("/(Empresa)/home/(tabs)");
+    } catch (error) {
+      console.error("Error de Axios:", error.response?.data || error.message);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Error en la respuesta del servidor"
+      );
     }
   };
 
   return (
     <>
-      <Stack.Screen options={{headerShown:true ,title:'Actualizar o Eliminar' }} />
-    <ScrollView style={{backgroundColor: '#F5F5F5',flex:1}}>
-      <View style={styles.container}>
-        <Text style={styles.label}>Título</Text>
-        <TextInput style={styles.input} value={tituloA} onChangeText={setTitulo} />
+      <Stack.Screen
+        options={{ headerShown: true, title: "Actualizar o Eliminar" }}
+      />
+      <ScrollView style={{ backgroundColor: "#F5F5F5", flex: 1 }}>
+        <View style={styles.container}>
+          <Text style={styles.label}>Título</Text>
+          <TextInput
+            style={styles.input}
+            value={tituloA}
+            onChangeText={setTitulo}
+          />
 
-        <Text style={styles.label}>Descripción</Text>
-        <TextInput style={styles.input} value={descripcionA} onChangeText={setDescripcion} multiline />
+          <Text style={styles.label}>Descripción</Text>
+          <TextInput
+            style={styles.input}
+            value={descripcionA}
+            onChangeText={setDescripcion}
+            multiline
+          />
 
-        <Text style={styles.label}>Ubicación</Text>
-        <TextInput style={styles.input} value={ubicacionA} onChangeText={setUbicacion} />
+          <Text style={styles.label}>Ubicación</Text>
+          <TextInput
+            style={styles.input}
+            value={ubicacionA}
+            onChangeText={setUbicacion}
+          />
 
-        <Text style={styles.label}>Salario Mínimo</Text>
-        <TextInput style={styles.input} value={String(salarioMinimoA)} onChangeText={(text) => setSalarioMinimo(Number(text))} keyboardType="numeric" />
+          <Text style={styles.label}>Salario Mínimo</Text>
+          <TextInput
+            style={styles.input}
+            value={String(salarioMinimoA)}
+            onChangeText={(text) => setSalarioMinimo(Number(text))}
+            keyboardType="numeric"
+          />
 
-        <Text style={styles.label}>Salario Máximo</Text>
-        <TextInput style={styles.input} value={String(salarioMaximoA)} onChangeText={(text) => setSalarioMaximo(Number(text))} keyboardType="numeric" />
+          <Text style={styles.label}>Salario Máximo</Text>
+          <TextInput
+            style={styles.input}
+            value={String(salarioMaximoA)}
+            onChangeText={(text) => setSalarioMaximo(Number(text))}
+            keyboardType="numeric"
+          />
 
-        <Text style={styles.label}>Horario</Text>
-        <TextInput style={styles.input} value={horarioA} onChangeText={setHorario} />
+          <Text style={styles.label}>Horario</Text>
+          <TextInput
+            style={styles.input}
+            value={horarioA}
+            onChangeText={setHorario}
+          />
 
-        <Text style={styles.label}>Multimedia</Text>
-        {multimediaContenidoA ? (
-          <Image source={{ uri: multimediaContenidoA }} style={{ width: 200, height: 200, marginBottom: 10 }} />
-        ) : (
-          <Text style={styles.placeholderText}>No se ha seleccionado ninguna imagen</Text>
-        )}
-        <TouchableOpacity style={styles.button} onPress={handlePickImage}>
-          <Text style={styles.buttonText}>Seleccionar Imagen</Text>
-        </TouchableOpacity>
+          <Text style={styles.label}>Multimedia</Text>
+          {multimediaContenidoA ? (
+            <Image
+              source={{ uri: multimediaContenidoA }}
+              style={{ width: 200, height: 200, marginBottom: 10 }}
+            />
+          ) : (
+            <Text style={styles.placeholderText}>
+              No se ha seleccionado ninguna imagen
+            </Text>
+          )}
+          <TouchableOpacity style={styles.button} onPress={handlePickImage}>
+            <Text style={styles.buttonText}>Seleccionar Imagen</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Actualizar Empleo</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+            <Text style={styles.submitButtonText}>Actualizar Empleo</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.button, { backgroundColor: "#FF0000" }]} onPress={handleDelete}>
-          <Text style={styles.buttonText}>Eliminar Empleo</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: "#FF0000" }]}
+            onPress={handleDelete}
+          >
+            <Text style={styles.buttonText}>Eliminar Empleo</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {

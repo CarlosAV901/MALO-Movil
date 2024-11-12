@@ -20,7 +20,7 @@ export default function Agregar() {
           <TouchableOpacity
             onPress={() => {
               logout(); 
-              router.push("/login"); 
+              router.replace("/login"); 
             }}
             style={styles.logoutButton}
           >

@@ -5,17 +5,17 @@
     "slug": "maloprueba",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/faviconMALO.png",
+    "icon": "./assets/images/iconoMal.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/image.png",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#2D17E8"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "cbcbd1cd-af32-4dc1-9735-dc020bd00b71",
+      "bundleIdentifier": "cbcbd1cd-af32-4dc1-9735-dc020bd00b71cd",
       "infoPlist": {
         "NSCameraUsageDescription": "Esta app necesita acceso a la cámara para tomar fotos.",
         "NSPhotoLibraryUsageDescription": "Esta app necesita acceso a la galería para subir imágenes.",
@@ -30,15 +30,15 @@
         "WRITE_EXTERNAL_STORAGE"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/faviconMALO.png",
-        "backgroundColor": "#2D17E8"
+        "foregroundImage": "./assets/images/iconoMal.png",
+        "backgroundColor": "#FFFFFF"
       },
       "package": "com.marvin_mal.maloprueba"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/faviconMALO.png"
+      "favicon": "./assets/images/iconoMal.png"
     },
     "plugins": ["expo-router"],
     "experiments": {

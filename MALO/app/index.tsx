@@ -45,6 +45,12 @@ export default function WelcomeScreen() {
         </View>
         <TouchableOpacity
           style={styles.button}
+          onPress={() => router.push("/(Usuario)/Home/(tabs)/buscar")}
+        >
+          <Text style={styles.buttonText}>Explora</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
           onPress={() => {
             openModal();
           }}

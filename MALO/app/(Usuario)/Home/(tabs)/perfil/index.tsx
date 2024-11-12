@@ -76,7 +76,7 @@ export default function AgregarEmpleo() {
       });
       console.log(response);
       Alert.alert("Éxito", "Usuario agregado exitosamente");
-      router.push("/(Empresa)/home/(tabs)");
+      router.push("/(Usuario)/Home/(tabs)");
     } catch (error) {
       console.error("Error de Axios:", error.response?.data || error.message);
       Alert.alert("Error", error.response?.data?.message || "Error en la respuesta del servidor");
