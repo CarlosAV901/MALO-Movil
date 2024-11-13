@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  ActivityIndicator, // Import ActivityIndicator
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { AuthContext } from "@app/context/AuthContext";
@@ -26,38 +27,25 @@ export default function ActualizarEmpleo() {
     ubicacion,
     salario_maximo,
     horario,
+    multimediaContenido,
   } = useLocalSearchParams();
 
   // Configurar el estado inicial usando los parámetros obtenidos
   const [tituloA, setTitulo] = useState<string>(titulo || "");
   const [descripcionA, setDescripcion] = useState<string>(descripcion || "");
   const [ubicacionA, setUbicacion] = useState<string>(ubicacion || "");
-  const [salarioMinimoA, setSalarioMinimo] = useState<number>(
-    salario_minimo ? Number(salario_minimo) : 0
-  );
-  const [salarioMaximoA, setSalarioMaximo] = useState<number>(
-    salario_maximo ? Number(salario_maximo) : 0
-  );
+  const [salarioMinimoA, setSalarioMinimo] = useState<number>(salario_minimo ? Number(salario_minimo) : 0);
+  const [salarioMaximoA, setSalarioMaximo] = useState<number>(salario_maximo ? Number(salario_maximo) : 0);
   const [horarioA, setHorario] = useState<string>(horario || "");
-  const [multimediaContenidoA, setMultimediaContenido] = useState<string>("");
+  const [multimediaContenidoA, setMultimediaContenido] = useState<string>(multimediaContenido || "");
 
-  useEffect(() => {
-    setTitulo(titulo || "");
-    setDescripcion(descripcion || "");
-    setUbicacion(ubicacion || "");
-    setSalarioMinimo(salario_minimo ? Number(salario_minimo) : 0);
-    setSalarioMaximo(salario_maximo ? Number(salario_maximo) : 0);
-    setHorario(horario || "");
-  }, [titulo, descripcion, ubicacion, salario_minimo, salario_maximo, horario]);
+  // Loading state for the spinner
+  const [loading, setLoading] = useState(false);
 
   const handlePickImage = async () => {
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
-      Alert.alert(
-        "Permisos requeridos",
-        "Se necesitan permisos para acceder a la galería."
-      );
+      Alert.alert("Permisos requeridos", "Se necesitan permisos para acceder a la galería.");
       return;
     }
 
@@ -73,6 +61,7 @@ export default function ActualizarEmpleo() {
   };
 
   const handleDelete = async () => {
+    setLoading(true); // Show spinner when deleting
     try {
       const response = await fetch(
         `https://malo-backend-empleos.onrender.com/api/Empleo/DeleteEmpleoById`,
@@ -93,11 +82,16 @@ export default function ActualizarEmpleo() {
       router.push("/(Empresa)/home/(tabs)");
     } catch (error: any) {
       Alert.alert("Error", error.message);
+    } finally {
+      setLoading(false); // Hide spinner after the operation
     }
   };
 
-  const handleSubmit = async () => {
+  const multimediaNombre = multimediaContenidoA.split("/").pop();
+  const multimediaTipo = "image/jpeg";
 
+  const handleSubmit = async () => {
+    setLoading(true); // Show spinner during form submission
     const formData = new FormData();
     formData.append("Empleo_id", String(empleoId));
     formData.append("titulo", tituloA);
@@ -106,20 +100,15 @@ export default function ActualizarEmpleo() {
     formData.append("salario_minimo", String(salarioMinimoA));
     formData.append("salario_maximo", String(salarioMaximoA));
     formData.append("horario", horarioA);
-
-    if (multimediaContenidoA) {
-      const uri = multimediaContenidoA;
-      const fileName = uri.split('/').pop(); // Extract file name from the URI
-      const fileType = fileName?.split('.').pop(); // Extract file extension
-      const file = {
-        uri: uri,
-        name: fileName,
-        type: `image/${fileType}`,
-      };
-      formData.append('archivo', file);
+    formData.append("multimediaNombre", multimediaNombre || "");
+    formData.append("multimediaTipo", multimediaTipo);
+    if (multimediaContenidoA && multimediaContenidoA !== "") {
+      formData.append("archivo", {
+        uri: multimediaContenidoA,
+        name: multimediaNombre,
+        type: multimediaTipo,
+      } as any);
     }
-
-    console.log(formData); // Revisa el contenido del formData antes de enviar
 
     try {
       const response = await axios.post(
@@ -131,7 +120,7 @@ export default function ActualizarEmpleo() {
           },
         }
       );
-      console.log(response);
+
       Alert.alert("Éxito", "Empleo actualizado exitosamente");
       router.push("/(Empresa)/home/(tabs)");
     } catch (error) {
@@ -140,6 +129,8 @@ export default function ActualizarEmpleo() {
         "Error",
         error.response?.data?.message || "Error en la respuesta del servidor"
       );
+    } finally {
+      setLoading(false); // Hide spinner after the operation
     }
   };
 
@@ -210,16 +201,22 @@ export default function ActualizarEmpleo() {
             <Text style={styles.buttonText}>Seleccionar Imagen</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>Actualizar Empleo</Text>
-          </TouchableOpacity>
+          {loading ? ( // Show spinner when loading
+            <ActivityIndicator size="large" color="#007BFF" />
+          ) : (
+            <>
+              <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+                <Text style={styles.submitButtonText}>Actualizar Empleo</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: "#FF0000" }]}
-            onPress={handleDelete}
-          >
-            <Text style={styles.buttonText}>Eliminar Empleo</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: "#FF0000" }]}
+                onPress={handleDelete}
+              >
+                <Text style={styles.buttonText}>Eliminar Empleo</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
     </>

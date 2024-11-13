@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,13 @@ import {
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
+import axios from "axios";
 
 export default function Detalles() {
   const router = useRouter();
   const {
+    user_id,
+    empleoId,
     multimediaContenido,
     titulo,
     descripcion,
@@ -25,8 +28,10 @@ export default function Detalles() {
     Ubicación,
   } = useLocalSearchParams();
 
-  // Convertir habilidades de string a array si es necesario
   const habilidadesArray = habilidades ? habilidades.split(",") : [];
+
+  // State to track if user has applied
+  const [hasApplied, setHasApplied] = useState(false);
 
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -36,14 +41,30 @@ export default function Detalles() {
     }),
   });
 
-  const sendTestNotification = async () => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Genial te has postulado",
-        body: "Genial ahora espera la respuesta de la empresa",
-      },
-      trigger: { seconds: 2 },
-    });
+  const sendApplication = async () => {
+    try {
+      const response = await axios.post(
+        "https://malo-backend-empleos.onrender.com/api/Aplicacion/aplicar-empleo",
+        {
+          usuarioID: user_id,
+          empleoID: empleoId,
+        }
+      );
+      if (response.status === 200) {
+        setHasApplied(true); // Set state to disable the button
+        alert(`Genial te haz postulado ${titulo}.`);
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Genial te has postulado",
+            body: `Genial ahora espera la respuesta de la empresa ${titulo}`,
+          },
+          trigger: { seconds: 2 },
+        });
+      }
+    } catch (error) {
+      console.error("Error al postularse:", error);
+      alert("Error al postularse. Inténtalo de nuevo.");
+    }
   };
 
   return (
@@ -115,10 +136,13 @@ export default function Detalles() {
         </View>
 
         <TouchableOpacity
-          style={styles.applyButton}
-          onPress={sendTestNotification}
+          style={[styles.applyButton, hasApplied && styles.disabledButton]}
+          onPress={sendApplication}
+          disabled={hasApplied} // Disable button if user has applied
         >
-          <Text style={styles.applyButtonText}>Postular</Text>
+          <Text style={styles.applyButtonText}>
+            {hasApplied ? "Postulado" : "Postular"}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </>
@@ -217,5 +241,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#FFF",
+  },
+  disabledButton: {
+    backgroundColor: "#ccc", // Light gray for disabled state
   },
 });

@@ -80,7 +80,7 @@ export default function WelcomeScreen() {
               <TouchableOpacity style={styles.optionButton} onPress={handleUserRegistration}>
                 <Text style={styles.optionText}>Usuario</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={closeModal}>
+              <TouchableOpacity style={{padding: 15,backgroundColor: "#000",borderRadius: 30,marginVertical: 5,width: "100%",alignItems: "center", }}onPress={closeModal}>
                 <Text style={styles.closeText}>Cerrar</Text>
               </TouchableOpacity>
             </View>
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     width: 400,
     height: 450,
     marginBottom: 1,
-    marginTop: -350,
+    marginTop: -220,
   },
   buttonContainer: {
     flexDirection: "row",
@@ -163,11 +163,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   optionText: {
-    color: "#fff",
+    color: "#000",
     fontSize: 16,
   },
   closeText: {
-    color: "#888",
-    marginTop: 10,
+    color: "#fff",
+    fontSize: 16,
   },
 });

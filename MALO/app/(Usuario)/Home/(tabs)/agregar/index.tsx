@@ -1,75 +1,281 @@
-import React, { useContext } from "react";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
-import { View } from "@app/components/Themed"; // Asegúrate de usar Themed.View si es necesario
-import EditScreenInfo from "@app/components/EditScreenInfo";
+import React, { useEffect, useState, useContext } from "react"; 
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
+import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { AuthContext } from "@app/context/AuthContext";
-import { router, useLocalSearchParams } from "expo-router";
 
-export default function Agregar() {
-  const authContext = useContext(AuthContext);
+export default function JobSearchScreen() {
+  const router = useRouter();
   const { user } = useContext(AuthContext);
-  const { isAuthenticated, logout } = authContext!; // Asegúrate de manejar el caso donde el contexto sea undefined
+  const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [location, setLocation] = useState("");
+  const [scheduleFilter, setScheduleFilter] = useState("");
+  const [salaryFilter, setSalaryFilter] = useState("");
+
+  const fetchJobs = async () => {
+    try {
+      const response = await fetch(
+        "https://malo-backend-empleos.onrender.com/api/Aplicacion/obtener-empleos-por-usuario",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ usuarioID: user?.id }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al obtener los empleos");
+      }
+
+      const data = await response.json();
+      setJobs(data);
+      setFilteredJobs(data);
+    } catch (error) {
+      console.error(error);
+      alert("Error al obtener los empleos");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  useEffect(() => {
+    const delayFilter = setTimeout(() => {
+      applyFilters();
+    }, 3000);
+
+    return () => clearTimeout(delayFilter);
+  }, [searchTerm, location, scheduleFilter, salaryFilter, jobs]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchJobs();
+    setRefreshing(false);
+  };
+
+  const applyFilters = () => {
+    let updatedJobs = jobs;
+
+    if (searchTerm) {
+      updatedJobs = updatedJobs.filter((job) =>
+        job.titulo.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (location) {
+      updatedJobs = updatedJobs.filter((job) =>
+        job.ubicacion.toLowerCase().includes(location.toLowerCase())
+      );
+    }
+
+    if (scheduleFilter) {
+      updatedJobs = updatedJobs.filter((job) => job.horario === scheduleFilter);
+    }
+
+    if (salaryFilter) {
+      updatedJobs = updatedJobs.filter((job) => {
+        const salary = parseFloat(salaryFilter);
+        return job.salario_minimo <= salary && job.salario_maximo >= salary;
+      });
+    }
+
+    setFilteredJobs(updatedJobs);
+  };
+
+  const renderJobItem = ({ item }) => (
+    <View style={styles.jobCard}>
+      {/* <Image source={{ uri: item.multimediaContenido }} style={styles.jobImage} /> */}
+      <View style={styles.jobDetails}>
+        <Text style={styles.jobTitle}>{item.titulo}</Text>
+        <Text style={styles.companyName}>
+          <FontAwesome name="check" size={20} color="gray" /> {item.descripcion}
+        </Text>
+        <TouchableOpacity
+          style={styles.applyButton}
+          onPress={() =>
+            router.push({
+              pathname: "/(Usuario)/detallePostulacion",
+              params: {
+                multimediaContenido: encodeURIComponent(item.multimediaContenido),
+                titulo: item.titulo,
+                descripcion: item.descripcion,
+                empresa: item.empresa,
+                horario: item.horario,
+                ubicacion: item.ubicacion,
+                salario_minimo: item.salario_minimo,
+                salario_maximo: item.salario_maximo,
+                empleoId: item.empleoId,
+              },
+            })
+          }
+        >
+          <Text style={styles.applyButtonText}>Ver postulacion</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      {isAuthenticated ? (
-        <>
-          <Text style={styles.title}>Bienvenido!</Text>
-          <Text style={styles.title}>correo {user?.email}</Text>
-          <Text style={styles.subtitle}>Ya has iniciado sesión</Text>
-          <TouchableOpacity
-            onPress={() => {
-              logout(); 
-              router.replace("/login"); 
-            }}
-            style={styles.logoutButton}
-          >
-            <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <FontAwesome name="arrow-left" size={24} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <FontAwesome name="user-circle" size={40} color="black" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.filters}>
+        <View style={styles.filterItem}>
+          <FontAwesome name="search" size={20} color="gray" />
+          <TextInput
+            placeholder="Buscar empleo..."
+            style={styles.filterInput}
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+          />
+        </View>
+        <View style={styles.filterItem}>
+          <FontAwesome name="map-marker" size={20} color="gray" />
+          <TextInput
+            placeholder="Ciudad o estado..."
+            style={styles.filterInput}
+            value={location}
+            onChangeText={setLocation}
+          />
+        </View>
+        <View style={styles.filterRow}>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setScheduleFilter("")}>
+            <Text>Horario</Text>
+            <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
           </TouchableOpacity>
-        </>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setSalaryFilter("")}>
+            <Text>Sueldo</Text>
+            <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#007BFF" />
       ) : (
-        <>
-          <Text style={styles.title}>Inicie sesión</Text>
-          <Text style={styles.subtitle}>
-            Por favor, inicie sesión para continuar
-          </Text>
-        </>
+        <FlatList
+          data={filteredJobs}
+          renderItem={renderJobItem}
+          keyExtractor={(item) => item.empleoId}
+          contentContainerStyle={styles.jobList}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        />
       )}
-      <View style={styles.separator} />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
+    backgroundColor: "#F5F5F5",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "center",
+    marginBottom: 16,
   },
-  title: {
-    fontSize: 20,
+  filters: {
+    marginBottom: 16,
+  },
+  filterItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderRadius: 30,
+    borderColor: "#DDD",
+    marginBottom: 8,
+  },
+  filterInput: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  filterRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderRadius: 30,
+    borderColor: "#DDD",
+    flex: 1,
+    marginLeft: 8,
+  },
+  jobList: {
+    paddingBottom: 16,
+    backgroundColor: "#E9E9E9",
+  },
+  jobCard: {
+    flexDirection: "row",
+    backgroundColor: "#FFF",
+    padding: 16,
+    marginBottom: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#DDD",
+  },
+  jobImage: {
+    width: 130,
+    height: 150,
+    borderRadius: 8,
+  },
+  jobDetails: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  jobTitle: {
     fontWeight: "bold",
-    color: "white",
-  },
-  subtitle: {
     fontSize: 16,
-    marginTop: 10,
-    color: "gray",
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: "80%",
+  companyName: {
+    color: "#555",
   },
-  logoutButton: {
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: "#ff5c5c",
-    borderRadius: 5,
+  applicants: {
+    color: "#888",
   },
-  logoutButtonText: {
-    color: "#fff",
-    fontSize: 16,
+  applyButton: {
+    marginTop: 8,
+    backgroundColor: "#007BFF",
+    padding: 10,
+    borderRadius: 8,
+  },
+  applyButtonText: {
+    color: "#FFF",
+    textAlign: "center",
   },
 });

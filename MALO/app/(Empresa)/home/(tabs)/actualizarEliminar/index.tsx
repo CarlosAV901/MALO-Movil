@@ -114,7 +114,7 @@ export default function JobSearchScreen() {
             router.push({
               pathname: "/(Empresa)/actualizar",
               params: {
-                multimediaContenido: item.multimediaContenido,
+                multimediaContenido: encodeURIComponent(item.multimediaContenido),
                 titulo: item.titulo,
                 descripcion: item.descripcion,
                 empresa: item.empresa,

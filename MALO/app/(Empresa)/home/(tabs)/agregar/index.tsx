@@ -56,7 +56,7 @@ export default function AgregarEmpleo() {
       name: multimediaNombre,
       type: multimediaTipo,
     } as any);
-  
+    console.log(formData);
     try {
       const response = await fetch("https://malo-backend-empleos.onrender.com/api/Empleo/PostEmpleo", {
         method: "POST",

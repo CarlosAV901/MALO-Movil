@@ -149,7 +149,7 @@ export default function LoginScreen() {
                 </View>
                 <View style={styles.switchContainer}>
                   <Text style={styles.switchLabel}>Soy una empresa</Text>
-                  <Switch value={isEmpresa} onValueChange={setIsEmpresa} />
+                  <Switch style={{padding:6}} value={isEmpresa} onValueChange={setIsEmpresa} />
                 </View>
               </View>
             </View>
@@ -245,7 +245,8 @@ const styles = StyleSheet.create({
   iconContainer: {
     position: "absolute",
     right: 10,
-    padding: 10,
+    padding: 5,
+    margin:5
   },
   toggleIcon: {
     fontSize: 18,
@@ -265,6 +266,7 @@ const styles = StyleSheet.create({
   linksContainer: {
     justifyContent: "center",
     alignItems: "center",
+    margin:4
   },
   link: {
     color: "#340bdb",

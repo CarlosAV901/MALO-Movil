@@ -110,11 +110,13 @@ export default function JobSearchScreen() {
         {isAuthenticated ? (
           <TouchableOpacity
             style={styles.applyButton}
-            onPress={() =>
+            onPress={() => {
               router.push({
                 pathname: "/(Usuario)/detallePostulacion",
                 params: {
-                  multimediaContenido: item.multimediaContenido,
+                  user_id:user?.id,
+                  empleoId:item.empleoId,
+                  multimediaContenido: encodeURIComponent(item.multimediaContenido),
                   titulo: item.titulo,
                   descripcion: item.descripcion,
                   empresa: item.empresa,
@@ -124,7 +126,7 @@ export default function JobSearchScreen() {
                   salario_maximo: item.salario_maximo,
                 },
               })
-            }
+            }}
           >
             <Text style={styles.applyButtonText}>Postular</Text>
           </TouchableOpacity>

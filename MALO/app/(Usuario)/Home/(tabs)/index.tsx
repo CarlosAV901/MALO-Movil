@@ -1,113 +1,41 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  FlatList,
-} from "react-native";
-import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import React, { useContext } from "react";
+import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { View } from "@app/components/Themed"; // Asegúrate de usar Themed.View si es necesario
+import EditScreenInfo from "@app/components/EditScreenInfo";
+import { AuthContext } from "@app/context/AuthContext";
+import { router, useLocalSearchParams } from "expo-router";
 
-export default function BuscarEmpleoScreen() {
-  const router = useRouter();
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("Restaurantes");
-
-  // Función para obtener los empleos de la API
-  const fetchJobs = async () => {
-    try {
-      const response = await fetch("https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos");
-      if (!response.ok) {
-        throw new Error('Error al obtener los empleos');
-      }
-      const data = await response.json();
-      setJobs(data); // Actualiza el estado con los empleos obtenidos
-    } catch (error) {
-      console.error(error);
-      alert('Error al obtener los empleos');
-    } finally {
-      setLoading(false); // Termina la carga
-    }
-  };
-
-  useEffect(() => {
-    fetchJobs(); // Llama a la función al montar el componente
-  }, []);
-
-  // Filtrar empleos según la categoría seleccionada
-  const filteredJobs = jobs.filter((job) => job.categoria === selectedCategory);
-
-  const renderJobItem = ({ item }) => (
-    <View style={styles.jobCard}>
-      <Image source={{ uri: item.multimediaContenido }} style={styles.jobImage} />
-      <Text style={styles.jobTitle}>{item.titulo}</Text>
-      <Text style={styles.jobCompany}>{item.empresa}</Text>
-      <Text style={styles.jobSalary}>{`${item.salario_minimo} - ${item.salario_maximo}`}</Text>
-      <TouchableOpacity
-        style={styles.applyButton}
-        onPress={() => router.push({
-          pathname: '/(Usuario)/detallePostulacion',
-          params: {
-            multimediaContenido: item.multimediaContenido,
-            titulo: item.titulo,
-            descripcion: item.descripcion,
-            empresa: item.empresa,
-            horario: item.horario,
-            ubicacion: item.ubicacion,
-            salario_minimo: item.salario_minimo,
-            salario_maximo: item.salario_maximo
-          }
-        })}
-      >
-        <Text style={styles.applyButtonText}>Postularme</Text>
-      </TouchableOpacity>
-    </View>
-  );
+export default function Agregar() {
+  const authContext = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
+  const { isAuthenticated, logout } = authContext!; // Asegúrate de manejar el caso donde el contexto sea undefined
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Manos A La Obra</Text>
-        <TouchableOpacity>
-          <FontAwesome name="user-circle" size={40} color="black" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Bar */}
-      <Text style={styles.title}>Encuentra el mejor empleo para ti</Text>
-      <View style={styles.filterItem}>
-        <FontAwesome name="search" size={20} color="gray" />
-        <TextInput placeholder="Buscar empleo..." style={styles.filterInput} />
-      </View>
-
-      {/* Tabs */}
-      <ScrollView horizontal style={styles.tabContainer}>
-        {["Restaurantes", "Hoteles", "Supermercados", "Asiendas", "Mecanica", "Electricos"].map((category) => (
-          <TouchableOpacity key={category} onPress={() => setSelectedCategory(category)}>
-            <Text style={[styles.tab, selectedCategory === category && styles.activeTab]}>{category}</Text>
+      {isAuthenticated ? (
+        <>
+          <Text style={styles.title}>Bienvenido!</Text>
+          <Text style={styles.title}>correo {user?.email}</Text>
+          <Text style={styles.subtitle}>Ya has iniciado sesión</Text>
+          <TouchableOpacity
+            onPress={() => {
+              logout(); 
+              router.replace("/login"); 
+            }}
+            style={styles.logoutButton}
+          >
+            <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Job List */}
-      {loading ? (
-        <ActivityIndicator size="large" color="#007BFF" />
+        </>
       ) : (
-        <FlatList
-          data={filteredJobs}
-          renderItem={renderJobItem}
-          keyExtractor={(item) => item.empleoId.toString()}
-          horizontal
-          contentContainerStyle={styles.jobList}
-        />
+        <>
+          <Text style={styles.title}>Inicie sesión</Text>
+          <Text style={styles.subtitle}>
+            Por favor, inicie sesión para continuar
+          </Text>
+        </>
       )}
+      <View style={styles.separator} />
     </View>
   );
 }
@@ -115,87 +43,33 @@ export default function BuscarEmpleoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: "#fff",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  filterItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderRadius: 30,
-    borderColor: "#DDD",
-    marginBottom: 8,
-  },
-  filterInput: {
-    flex: 1,
-    marginLeft: 8,
+    justifyContent: "center",
   },
   title: {
-    fontSize: 30,
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "white",
+  },
+  subtitle: {
+    fontSize: 16,
+    marginTop: 10,
+    color: "gray",
+  },
+  separator: {
+    marginVertical: 30,
+    height: 1,
+    width: "80%",
+  },
+  logoutButton: {
     marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: "#ff5c5c",
+    borderRadius: 5,
   },
-  tabContainer: {
-    marginVertical: 5,
-  },
-  tab: {
-    marginRight: 20,
-    fontSize: 16,
-    color: "#333",
-  },
-  activeTab: {
-    fontWeight: "bold",
-    borderBottomWidth: 2,
-    borderBottomColor: "#007bff",
-  },
-  jobList: {
-    paddingBottom: 16,
-  },
-  jobCard: {
-    backgroundColor: "#f2f2f2",
-    padding: 10,
-    borderRadius: 10,
-    marginRight: 10,
-    width: 200,
-  },
-  jobImage: {
-    width: "100%",
-    height: 100,
-    borderRadius: 10,
-  },
-  jobTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  jobCompany: {
-    fontSize: 14,
-    color: "#666",
-  },
-  jobSalary: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 10,
-  },
-  applyButton: {
-    backgroundColor: "#007bff",
-    paddingVertical: 8,
-    borderRadius: 20,
-    alignItems: "center",
-  },
-  applyButtonText: {
+  logoutButtonText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 16,
   },
 });
