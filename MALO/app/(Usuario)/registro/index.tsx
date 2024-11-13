@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Alert,ScrollView } from 'react-native';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import { getEstados, getLocalidades, getMunicipios } from '@app/services/registrosServices';
 import { RegistroUsuarioService } from '@app/services/registrosServices'
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 //import { format, isValid, parse } from 'date-fns';
 
 export default function RegisterForm() {
@@ -238,34 +238,38 @@ export default function RegisterForm() {
   };
 
   return (
+    <>
+    <Stack.Screen
+    options={{ headerShown: true, title: "Registrate" }}
+  />
     <View style={styles.container}>
       <View style={styles.form}>
         <Text style={styles.title}>Regístrate</Text>
-
+<ScrollView style={{width:"100%"}}>
         {/* Nombre */}
         <View style={styles.inputContainer}>
-          <FontAwesome name="user" size={15} color="black" />
+          <FontAwesome name="user" size={24} color="black" />
           <TextInput style={styles.input} placeholder="Nombre" value={nombre} onChangeText={setName} />
         </View>
         {errors.nombre ? <Text style={styles.errorText}>{errors.nombre}</Text> : null}
 
         {/* Apellido */}
         <View style={styles.inputContainer}>
-          <FontAwesome name="user" size={15} color="black" />
+          <FontAwesome name="user" size={24} color="black" />
           <TextInput style={styles.input} placeholder="Apellido" value={apellido} onChangeText={setLastName} />
         </View>
         {errors.apellido ? <Text style={styles.errorText}>{errors.apellido}</Text> : null}
 
         {/* Teléfono */}
         <View style={styles.inputContainer}>
-          <FontAwesome name="phone" size={15} color="black" />
+          <FontAwesome name="phone" size={24} color="black" />
           <TextInput style={styles.input} placeholder="Teléfono" keyboardType="phone-pad" value={telefono} onChangeText={setPhone} />
         </View>
         {errors.telefono ? <Text style={styles.errorText}>{errors.telefono}</Text> : null}
 
         {/* Fecha de Nacimiento */}
         <View style={styles.inputContainer}>
-          <FontAwesome name="calendar" size={15} color="black" />
+          <FontAwesome name="calendar" size={24} color="black" />
           <TextInput
             style={styles.input}
             placeholder="Fecha Nacimiento (dd/mm/yyyy)"
@@ -278,14 +282,14 @@ export default function RegisterForm() {
 
         {/* Correo Electrónico */}
         <View style={styles.inputContainer}>
-          <FontAwesome name="envelope" size={15} color="black" />
+          <FontAwesome name="envelope" size={24} color="black" />
           <TextInput style={styles.input} placeholder="Correo Electrónico" keyboardType="email-address" value={email} onChangeText={setEmail} />
         </View>
         {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
 
         {/* Contraseña */}
         <View style={styles.inputContainer}>
-          <FontAwesome name="lock" size={15} color="black" />
+          <FontAwesome name="lock" size={24} color="black" />
           <TextInput
             style={styles.input}
             placeholder="Contraseña"
@@ -294,15 +298,15 @@ export default function RegisterForm() {
             onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={20} color="black" />
+            <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="black" />
           </TouchableOpacity>
         </View>
         {errors.contrasena ? <Text style={styles.errorText}>{errors.contrasena}</Text> : null}
-
+       
         {/* Dropdown para Estado */}
         <TouchableOpacity style={styles.dropdown} onPress={() => setIsStateModalVisible(true)}>
           <Text>{selectedState ? selectedState.nomgeo : 'Seleccionar Estado'}</Text>
-          <MaterialIcons name="arrow-drop-down" size={15} color="black" />
+          <MaterialIcons style={{paddingLeft:135}} name="arrow-drop-down" size={30} color="black" />
         </TouchableOpacity>
         <Modal visible={isStateModalVisible} animationType="slide" transparent={true}>
           <View style={styles.modalContainer}>
@@ -325,7 +329,7 @@ export default function RegisterForm() {
         {/* Dropdown para Municipio */}
         <TouchableOpacity style={styles.dropdown} onPress={() => setIsMunicipalityModalVisible(true)}>
           <Text>{selectedMunicipality ? selectedMunicipality.nomgeo : 'Seleccionar Municipio'}</Text>
-          <MaterialIcons name="arrow-drop-down" size={15} color="black" />
+          <MaterialIcons style={{paddingLeft:120}} name="arrow-drop-down" size={30} color="black" />
         </TouchableOpacity>
         <Modal visible={isMunicipalityModalVisible} animationType="slide" transparent={true}>
           <View style={styles.modalContainer}>
@@ -348,7 +352,7 @@ export default function RegisterForm() {
         {/* Dropdown para Localidad */}
         <TouchableOpacity style={styles.dropdown} onPress={() => setIsLocalityModalVisible(true)}>
           <Text>{selectedLocality ? selectedLocality.nomgeo : 'Seleccionar Localidad'}</Text>
-          <MaterialIcons name="arrow-drop-down" size={15} color="black" />
+          <MaterialIcons style={{paddingLeft:120}} name="arrow-drop-down" size={30} color="black" />
         </TouchableOpacity>
         <Modal visible={isLocalityModalVisible} animationType="slide" transparent={true}>
           <View style={styles.modalContainer}>
@@ -368,13 +372,14 @@ export default function RegisterForm() {
         </Modal>
         {errors.localidad ? <Text style={styles.errorText}>{errors.localidad}</Text> : null}
 
-
+        </ScrollView>
         {/* Submit button */}
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <Text style={styles.submitButtonText}>Registrarse</Text>
         </TouchableOpacity>
       </View>
     </View>
+    </>
   );
 }
 const styles = StyleSheet.create({
@@ -409,15 +414,17 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    marginRight: 10,
+    marginLeft: 10,
   },
   dropdown: {
+    flexDirection: 'row',
     borderWidth: 2,
-    borderColor: '#ccc',
-    borderRadius: 5,
+    borderColor: '#ddd',
+    borderRadius: 30,
     padding: 10,
-    marginBottom: 10,
+    marginBottom: 15,
     alignItems: 'center',
+    width: '100%',
   },
   submitButton: {
     backgroundColor: '#3a78d5',

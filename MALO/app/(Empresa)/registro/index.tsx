@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { RegistroEmpresaService } from "@app/services/registrosServices";
 
 export default function RegisterForm() {
@@ -52,6 +52,10 @@ export default function RegisterForm() {
   };
 
   return (
+    <>
+    <Stack.Screen
+    options={{ headerShown: true, title: "Registra una empresa" }}
+  />
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.form}>
         <Text style={styles.title}>Regístra tu empresa</Text>
@@ -115,9 +119,12 @@ export default function RegisterForm() {
 
       <View style={styles.linksContainer}>
         <View style={styles.horizontalLine}></View>
-        <Text style={styles.link}>¿Ya tienes cuenta?</Text>
+        <TouchableOpacity onPress={() => router.replace(`/login`)}>
+          <Text style={styles.link}>¿Ya tienes cuenta?</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
+    </>
   );
 }
 

@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
   Switch,
+  Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Path } from "react-native-svg";
@@ -26,7 +27,23 @@ export default function LoginScreen() {
   const { login, isLoading, user } = useContext(AuthContext);
   const router = useRouter();
   const [isEmpresa, setIsEmpresa] = useState<boolean>(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const openModal = () => {
+    setModalVisible(true);
+  };
 
+  const closeModal = () => {
+    setModalVisible(false);
+  };
+  const handleCompanyRegistration = () => {
+    closeModal();
+    router.push('/(Empresa)/registro')
+  };
+
+  const handleUserRegistration = () => {
+    closeModal();
+   router.push('/(Usuario)/registro')
+  };
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
@@ -171,12 +188,35 @@ export default function LoginScreen() {
             <Text style={styles.link}>Olvidé la contraseña</Text>
           </TouchableOpacity>
           <View style={styles.horizontalLine}></View>
-          <TouchableOpacity onPress={() => router.replace(`/registro`)}>
+          <TouchableOpacity
+          onPress={() => {openModal();}}>
             <Text style={styles.link}>No tienes cuenta?</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={closeModal}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>¿Eres una Empresa o un Usuario?</Text>
+              <TouchableOpacity style={styles.optionButton} onPress={handleCompanyRegistration}>
+                <Text style={styles.optionText}>Empresa</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.optionButton} onPress={handleUserRegistration}>
+                <Text style={styles.optionText}>Usuario</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{padding: 15,backgroundColor: "#000",borderRadius: 30,marginVertical: 5,width: "100%",alignItems: "center", }}onPress={closeModal}>
+                <Text style={styles.closeText}>Cerrar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
     </KeyboardAvoidingView>
+    
   );
 }
 
@@ -287,5 +327,38 @@ const styles = StyleSheet.create({
   switchLabel: {
     marginRight: 10,
     color:"#fff"
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    marginBottom: 20,
+  },
+  optionButton: {
+    padding: 15,
+    backgroundColor: "#3a78d5",
+    borderRadius: 30,
+    marginVertical: 5,
+    width: "100%",
+    alignItems: "center",
+  },
+  optionText: {
+    color: "#000",
+    fontSize: 16,
+  },
+  closeText: {
+    color: "#fff",
+    fontSize: 16,
   },
 });
