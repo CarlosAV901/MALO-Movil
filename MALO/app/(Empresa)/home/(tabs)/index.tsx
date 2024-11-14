@@ -1,123 +1,152 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
-  TextInput,
-  ScrollView,
+  FlatList,
   Image,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  FlatList,
+  RefreshControl,
 } from "react-native";
-import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { AuthContext } from "@app/context/AuthContext";
 
-export default function BuscarEmpleoScreen() {
+export default function JobSearchScreen() {
   const router = useRouter();
+  const { user } = useContext(AuthContext);
   const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
+  const [usuarios, setUsuarios] = useState([]); // Nuevo estado para almacenar usuarios
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("Hola");
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Función para obtener los empleos de la API
   const fetchJobs = async () => {
     try {
-      const response = await fetch("https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos");
+      const response = await fetch(
+        "https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos"
+      );
       if (!response.ok) {
-        throw new Error('Error al obtener los empleos');
+        throw new Error("Error al obtener los empleos");
       }
       const data = await response.json();
-      setJobs(data); // Actualiza el estado con los empleos obtenidos
+      const filteredByEmpresa = data.filter(
+        (job) => job.empresa_id === user?.id
+      );
+      setJobs(filteredByEmpresa);
+      setFilteredJobs(filteredByEmpresa);
     } catch (error) {
       console.error(error);
-      alert('Error al obtener los empleos');
+      alert("Error al obtener los empleos");
     } finally {
-      setLoading(false); // Termina la carga
+      setLoading(false);
+    }
+  };
+
+  // Función para obtener usuarios aplicados a un empleo específico
+  const fetchUsuariosPorEmpleo = async (empleoId) => {
+    try {
+      const response = await fetch(
+        "https://malo-backend-empleos.onrender.com/api/Aplicacion/obtener-usuarios-por-empleo",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ empleoID: empleoId }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al obtener los usuarios");
+      }
+
+      const data = await response.json();
+      setUsuarios(data); // Almacena los usuarios en el estado
+    } catch (error) {
+      console.error(error);
+      alert("Error al obtener los usuarios");
     }
   };
 
   useEffect(() => {
-    fetchJobs(); // Llama a la función al montar el componente
+    fetchJobs();
   }, []);
 
-  // Filtrar empleos según la categoría seleccionada
-  const filteredJobs = jobs.filter((job) => job.categoria === selectedCategory);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchJobs();
+    setRefreshing(false);
+  };
 
   const renderJobItem = ({ item }) => (
     <View style={styles.jobCard}>
-      <Image source={{ uri: item.multimediaContenido }} style={styles.jobImage} />
-      <Text style={styles.jobTitle}>{item.titulo}</Text>
-      <Text style={styles.jobCompany}>{item.empresa}</Text>
-      <Text style={styles.jobSalary}>{`${item.salario_minimo} - ${item.salario_maximo}`}</Text>
-      <TouchableOpacity
-        style={styles.applyButton}
-        onPress={() => router.push({
-          pathname: '/(Usuario)/detallePostulacion',
-          params: {
-            multimediaContenido: item.multimediaContenido,
-            titulo: item.titulo,
-            descripcion: item.descripcion,
-            empresa: item.empresa,
-            horario: item.horario,
-            ubicacion: item.ubicacion,
-            salario_minimo: item.salario_minimo,
-            salario_maximo: item.salario_maximo
-          }
-        })}
-      >
-        <Text style={styles.applyButtonText}>Postularme</Text>
-      </TouchableOpacity>
+      <Image
+        source={{ uri: item.multimediaContenido }}
+        style={styles.jobImage}
+      />
+      <View style={styles.jobDetails}>
+        <Text style={styles.jobTitle}>{item.titulo}</Text>
+        <Text style={styles.companyName}>
+          <FontAwesome name="check" size={20} color="gray" /> {item.descripcion}
+        </Text>
+        <TouchableOpacity
+          style={styles.applyButton}
+          onPress={() => fetchUsuariosPorEmpleo(item.empleoId)} // Llama a la API de usuarios con el empleoId
+        >
+          <Text style={styles.applyButtonText}>Ver Usuarios</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderUsuarioItem = ({ item }) => (
+    <View style={styles.usuarioCard}>
+      <Text style={styles.usuarioName}>{item.usuario_id}</Text>
+      <Text style={styles.usuarioEmail}>{item.fecha_aplicacion}</Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Manos A La Obra</Text>
+     <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <FontAwesome name="arrow-left" size={24} color="black" />
+        </TouchableOpacity>
+        <Text style={styles.headerText}>Postulaciones</Text>
         <TouchableOpacity>
           <FontAwesome name="user-circle" size={40} color="black" />
         </TouchableOpacity>
       </View>
-
-      {/* Search Bar */}
-      <Text style={styles.title}>Encuentra el mejor empleo para ti</Text>
-      <View style={styles.filterItem}>
-        <FontAwesome name="search" size={20} color="gray" />
-        <TextInput placeholder="Buscar empleo..." style={styles.filterInput} />
-      </View>
-
-      {/* Tabs */}
-      <ScrollView horizontal style={styles.tabContainer}>
-        {["Hola", "Hoteles", "Supermercados", "Asiendas", "Mecanica", "Electricos"].map((category) => (
-          <TouchableOpacity key={category} onPress={() => setSelectedCategory(category)}>
-            <Text style={[styles.tab, selectedCategory === category && styles.activeTab]}>{category}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Job List */}
       {loading ? (
         <ActivityIndicator size="large" color="#007BFF" />
       ) : (
-        <FlatList
-          data={filteredJobs}
-          renderItem={renderJobItem}
-          keyExtractor={(item) => item.empleoId.toString()}
-          horizontal
-          contentContainerStyle={styles.jobList}
-        />
+        <>
+          <FlatList
+            data={filteredJobs}
+            renderItem={renderJobItem}
+            keyExtractor={(item) => item.empleoId}
+            contentContainerStyle={styles.jobList}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          />
+          <Text style={styles.sectionTitle}>Usuarios aplicados:</Text>
+          <FlatList
+            data={usuarios} // Muestra los usuarios
+            renderItem={renderUsuarioItem}
+            keyExtractor={(item) => item.usuarioID}
+            contentContainerStyle={styles.usuarioList}
+          />
+        </>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: "#fff",
-  },
+  container: { flex: 1, padding: 16, backgroundColor: "#F5F5F5" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -129,6 +158,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
+  filters: { marginBottom: 16 },
   filterItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -139,63 +169,52 @@ const styles = StyleSheet.create({
     borderColor: "#DDD",
     marginBottom: 8,
   },
-  filterInput: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  title: {
-    fontSize: 30,
-    marginTop: 20,
-  },
-  tabContainer: {
-    marginVertical: 5,
-  },
-  tab: {
-    marginRight: 20,
-    fontSize: 16,
-    color: "#333",
-  },
-  activeTab: {
-    fontWeight: "bold",
-    borderBottomWidth: 2,
-    borderBottomColor: "#007bff",
-  },
-  jobList: {
-    paddingBottom: 16,
-  },
+  filterInput: { flex: 1, marginLeft: 8 },
+  jobList: { paddingBottom: 16, backgroundColor: "#E9E9E9" },
   jobCard: {
-    backgroundColor: "#f2f2f2",
+    flexDirection: "row",
+    backgroundColor: "#FFF",
+    padding: 16,
+    marginBottom: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#DDD",
+  },
+  jobImage: { width: 130, height: 150, borderRadius: 8 },
+  jobDetails: { marginLeft: 16, flex: 1 },
+  jobTitle: { fontWeight: "bold", fontSize: 16 },
+  companyName: { color: "#555" },
+  usuarioList: { color: "#555" },
+  applyButton: {
+    marginTop: 8,
+    backgroundColor: "#007BFF",
     padding: 10,
-    borderRadius: 10,
-    marginRight: 10,
-    width: 200,
+    borderRadius: 8,
   },
-  jobImage: {
-    width: "100%",
-    height: 100,
-    borderRadius: 10,
+  applyButtonText: { color: "#FFF", textAlign: "center" },
+  applicantCard: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
   },
-  jobTitle: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  usuarioCard: {
+    padding: 16,
+    backgroundColor: "#FFF",
+    marginBottom: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#DDD",
+  },
+  usuarioName: {
     fontWeight: "bold",
   },
-  jobCompany: {
-    fontSize: 14,
-    color: "#666",
-  },
-  jobSalary: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 10,
-  },
-  applyButton: {
-    backgroundColor: "#007bff",
-    paddingVertical: 8,
-    borderRadius: 20,
-    alignItems: "center",
-  },
-  applyButtonText: {
-    color: "#fff",
-    fontSize: 14,
+  usuarioEmail: {
+    color: "#555",
   },
 });

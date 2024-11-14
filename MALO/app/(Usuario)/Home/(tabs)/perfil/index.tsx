@@ -41,36 +41,56 @@ export default function AgregarEmpleo() {
       Alert.alert("Error", "No se pudo encontrar el token de autenticación.");
       return;
     }
-  
+    const multimediaNombre = imagenPerfil.split("/").pop();
+    const multimediaTipo = "image/jpeg";
+    
     const formData = new FormData();
-    formData.append('UsuarioId', user.id);
-    formData.append('nombre', nombre);
-    formData.append('email', email);
-    formData.append('apellido', apellido);
-    formData.append('telefono', telefono);
-    formData.append('estado', estado || "");
-    formData.append('municipio', municipio || "");
-    formData.append('localidad', localidad || "");
-    formData.append('descripcion', descripcion);
-    formData.append('habilidades', '3,7,10');
-  
-    // Convert the image URI to a File object if an image is selected
+    formData.append('UsuarioId', user.id);  
     if (imagenPerfil) {
-      const uri = imagenPerfil;
-      const fileName = uri.split('/').pop(); // Extract file name from the URI
-      const fileType = fileName?.split('.').pop(); // Extract file extension
-      const file = {
-        uri: uri,
-        name: fileName,
-        type: `image/${fileType}`,
-      };
-      formData.append('archivo', file);
+
+      formData.append("archivo", {
+        uri: imagenPerfil,
+        name: multimediaNombre,
+        type: multimediaTipo,
+      } as any);
+    }
+    try {
+      const responseMultimedia = await axios.post(
+        "https://malo-backend.onrender.com/api/Usuario/ActualizarMultimedia",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+  
+      Alert.alert("Éxito", "Multimedia actualizada exitosamente");
+    } catch (error) {
+      console.error("Error de Axios (Multimedia):", error.response?.data || error.message);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Error en la respuesta del servidor"
+      );
     }
   
-    try {
-      const response = await axios.post('https://malo-backend.onrender.com/api/Usuario/ActualizarUsuario', formData, {
+    const userData = {
+    UsuarioId:user.id,
+    nombre: nombre,
+    email: email,
+    apellido: apellido,
+    telefono: telefono,
+    estado:estado,
+    municipio: municipio,
+    localidad: localidad,
+    descripcion: descripcion,
+    habilidades: '3,7,10',
+    }
+  
+   /*  try {
+      const response = await axios.post('https://malo-backend.onrender.com/api/Usuario/ActualizarUsuario', userData, {
         headers: {
-          'Content-Type': 'multipart/form-data', // Make sure the correct content type is set
+          'Content-Type': 'application/json', // Make sure the correct content type is set
           'Authorization': `Bearer ${user.token}`,
         }
       });
@@ -80,7 +100,7 @@ export default function AgregarEmpleo() {
     } catch (error) {
       console.error("Error de Axios:", error.response?.data || error.message);
       Alert.alert("Error", error.response?.data?.message || "Error en la respuesta del servidor");
-    }
+    } */
   };
   
 

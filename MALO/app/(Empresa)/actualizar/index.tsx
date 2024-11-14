@@ -89,30 +89,24 @@ export default function ActualizarEmpleo() {
 
   const multimediaNombre = multimediaContenidoA.split("/").pop();
   const multimediaTipo = "image/jpeg";
-
+  
   const handleSubmit = async () => {
     setLoading(true); // Show spinner during form submission
+  
+    // First Request: Updating multimedia
     const formData = new FormData();
-    formData.append("Empleo_id", String(empleoId));
-    formData.append("titulo", tituloA);
-    formData.append("descripcion", descripcionA);
-    formData.append("ubicacion", ubicacionA);
-    formData.append("salario_minimo", String(salarioMinimoA));
-    formData.append("salario_maximo", String(salarioMaximoA));
-    formData.append("horario", horarioA);
-    formData.append("multimediaNombre", multimediaNombre || "");
-    formData.append("multimediaTipo", multimediaTipo);
-    if (multimediaContenidoA && multimediaContenidoA !== "") {
+    formData.append("EmpleoId", String(empleoId));
+    if (multimediaContenidoA) {
       formData.append("archivo", {
         uri: multimediaContenidoA,
         name: multimediaNombre,
         type: multimediaTipo,
       } as any);
     }
-
+  
     try {
-      const response = await axios.post(
-        "https://malo-backend-empleos.onrender.com/api/Empleo/UpdateEmpleoById",
+      const responseMultimedia = await axios.post(
+        "https://malo-backend-empleos.onrender.com/api/Empleo/ActualizarMultimedia",
         formData,
         {
           headers: {
@@ -120,20 +114,51 @@ export default function ActualizarEmpleo() {
           },
         }
       );
-
+  
+      Alert.alert("Éxito", "Multimedia actualizada exitosamente");
+    } catch (error) {
+      console.error("Error de Axios (Multimedia):", error.response?.data || error.message);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Error en la respuesta del servidor"
+      );
+    }
+  
+    // Second Request: Updating job details
+    const user = {
+      Empleo_id: String(empleoId),
+      titulo: tituloA,
+      descripcion: descripcionA,
+      ubicacion: ubicacionA,
+      salario_minimo: salarioMinimoA,
+      salario_maximo: salarioMaximoA,
+      horario: horarioA
+    };
+  
+    try {
+      const responseJob = await axios.post(
+        "https://malo-backend-empleos.onrender.com/api/Empleo/UpdateEmpleoById",
+        user,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+  
       Alert.alert("Éxito", "Empleo actualizado exitosamente");
       router.push("/(Empresa)/home/(tabs)");
     } catch (error) {
-      console.error("Error de Axios:", error.response?.data || error.message);
+      console.error("Error de Axios (Job Update):", error.response?.data || error.message);
       Alert.alert(
         "Error",
         error.response?.data?.message || "Error en la respuesta del servidor"
       );
     } finally {
-      setLoading(false); // Hide spinner after the operation
+      setLoading(false); // Hide spinner after all operations
     }
   };
-
+  
   return (
     <>
       <Stack.Screen
