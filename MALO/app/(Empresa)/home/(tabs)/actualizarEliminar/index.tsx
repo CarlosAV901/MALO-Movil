@@ -9,11 +9,12 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  Keyboard,
+  Modal,
 } from "react-native";
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { AuthContext } from "@app/context/AuthContext";
+import axios from "axios";
 
 export default function JobSearchScreen() {
   const router = useRouter();
@@ -26,24 +27,77 @@ export default function JobSearchScreen() {
   const [location, setLocation] = useState("");
   const [scheduleFilter, setScheduleFilter] = useState("");
   const [salaryFilter, setSalaryFilter] = useState("");
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [isSalaryOpen, setIsSalaryOpen] = useState(false);
+  const [applicantsCount, setApplicantsCount] = useState({});
+  const [companyNames, setCompanyNames] = useState({});
+  const scheduleOptions = [
+    "Tiempo completo",
+    "Medio tiempo",
+    "Mañana",
+    "Noche",
+    "Tarde",
+    "",
+  ];
+  const salaryOptions = ["1000", "2000", "3000", ""];
+  const authContext = useContext(AuthContext);
+  const { isAuthenticated, logout } = authContext!;
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  useEffect(() => {
+    const delayFilter = setTimeout(() => applyFilters(), 6000);
+    return () => clearTimeout(delayFilter);
+  }, [searchTerm, location, scheduleFilter, salaryFilter, jobs]);
+
+  const fetchCompanyNames = async () => {
+    try {
+      const response = await axios.get(
+        "https://malo-backend-empresas.onrender.com/api/Empresa/GetEmpresa"
+      );
+      const companies = response.data.reduce((acc, company) => {
+        acc[company.id] = company.nombre;
+        return acc;
+      }, {});
+      setCompanyNames(companies);
+    } catch (error) {
+      console.error("Error al obtener los nombres de las empresas:", error);
+    }
+  };
+
+  const fetchApplicantsCount = async (empleoID) => {
+    try {
+      const response = await axios.post(
+        "https://malo-backend-empleos.onrender.com/api/Aplicacion/contar-aplicaciones-por-empleo",
+        { empleoID }
+      );
+      setApplicantsCount((prevCounts) => ({
+        ...prevCounts,
+        [empleoID]: response.data, // Suponiendo que `count` es la respuesta de la API
+      }));
+    } catch (error) {
+      console.error("Error al contar los postulados:", error);
+    }
+  };
 
   const fetchJobs = async () => {
     try {
-      const response = await fetch(
+      const response = await axios.get(
         "https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos"
       );
-      if (!response.ok) {
-        throw new Error("Error al obtener los empleos");
-      }
-      const data = await response.json();
-
+      const data = response.data.filter((job) => job.empresa_id);
+      setJobs(data);
+      setFilteredJobs(data);
+      data.forEach((job) => fetchApplicantsCount(job.empleoId));
       const filteredByEmpresa = data.filter(
         (job) => job.empresa_id === user?.id
       );
       setJobs(filteredByEmpresa);
       setFilteredJobs(filteredByEmpresa);
     } catch (error) {
-      console.error(error);
+      console.error("Error al obtener los empleos:", error);
       alert("Error al obtener los empleos");
     } finally {
       setLoading(false);
@@ -51,49 +105,41 @@ export default function JobSearchScreen() {
   };
 
   useEffect(() => {
+    fetchCompanyNames();
     fetchJobs();
   }, []);
 
   useEffect(() => {
-    const delayFilter = setTimeout(() => {
-      applyFilters();
-    }, 3000); // Retraso de 6 segundos
-
-    return () => clearTimeout(delayFilter); // Limpia el temporizador si se cambia el filtro
+    const delayFilter = setTimeout(() => applyFilters(), 6000);
+    return () => clearTimeout(delayFilter);
   }, [searchTerm, location, scheduleFilter, salaryFilter, jobs]);
 
   const onRefresh = async () => {
     setRefreshing(true);
+    await fetchCompanyNames();
     await fetchJobs();
     setRefreshing(false);
   };
 
   const applyFilters = () => {
     let updatedJobs = jobs;
-
-    if (searchTerm) {
+    if (searchTerm)
       updatedJobs = updatedJobs.filter((job) =>
         job.titulo.toLowerCase().includes(searchTerm.toLowerCase())
       );
-    }
-
-    if (location) {
+    if (location)
       updatedJobs = updatedJobs.filter((job) =>
         job.ubicacion.toLowerCase().includes(location.toLowerCase())
       );
-    }
-
-    if (scheduleFilter) {
+    if (scheduleFilter)
       updatedJobs = updatedJobs.filter((job) => job.horario === scheduleFilter);
-    }
-
     if (salaryFilter) {
-      updatedJobs = updatedJobs.filter((job) => {
-        const salary = parseFloat(salaryFilter);
-        return job.salario_minimo <= salary && job.salario_maximo >= salary;
-      });
+      const salary = parseFloat(salaryFilter);
+      if (!isNaN(salary))
+        updatedJobs = updatedJobs.filter(
+          (job) => job.salario_minimo <= salary && job.salario_maximo >= salary
+        );
     }
-
     setFilteredJobs(updatedJobs);
   };
 
@@ -106,44 +152,87 @@ export default function JobSearchScreen() {
       <View style={styles.jobDetails}>
         <Text style={styles.jobTitle}>{item.titulo}</Text>
         <Text style={styles.companyName}>
-          <FontAwesome name="check" size={20} color="gray" /> {item.descripcion}
+          {companyNames[item.empresa_id] || "Nombre no disponible"}
         </Text>
-        <TouchableOpacity
-          style={styles.applyButton}
-          onPress={() =>
-            router.push({
-              pathname: "/(Empresa)/actualizar",
-              params: {
-                multimediaContenido: encodeURIComponent(item.multimediaContenido),
-                titulo: item.titulo,
-                descripcion: item.descripcion,
-                empresa: item.empresa,
-                horario: item.horario,
-                ubicacion: item.ubicacion,
-                salario_minimo: item.salario_minimo,
-                salario_maximo: item.salario_maximo,
-                empleoId: item.empleoId,
-              },
-            })
-          }
-        >
-          <Text style={styles.applyButtonText}>Editar</Text>
-        </TouchableOpacity>
+        <Text style={styles.applicants}>{item.horario}</Text>
+        <Text style={styles.applicants}>
+          Minimo: ${item.salario_minimo}, Maximo: ${item.salario_maximo}
+        </Text>
+        <Text style={styles.applicants}>
+          Postulados: {applicantsCount[item.empleoId] || 0}
+        </Text>
+
+      
+          <TouchableOpacity
+            style={styles.applyButton}
+            onPress={() => {
+              const empresaId = item.empresa_id;
+              const empresaNombre =
+                companyNames && companyNames[empresaId]
+                  ? companyNames[empresaId]
+                  : "Nombre no disponible";
+
+              router.push({
+                pathname: "/(Empresa)/actualizar",
+                params: {
+                  user_id: user?.id,
+                  empleoId: item.empleoId,
+                  multimediaContenido: encodeURIComponent(
+                    item.multimediaContenido
+                  ),
+                  titulo: item.titulo,
+                  descripcion: item.descripcion,
+                  horario: item.horario,
+                  ubicacion: item.ubicacion,
+                  salario_minimo: item.salario_minimo,
+                  salario_maximo: item.salario_maximo,
+                  empresaNombre: empresaNombre,
+                },
+              });
+            }}
+          >
+            <Text style={styles.applyButtonText}>Editar</Text>
+          </TouchableOpacity>
+        
       </View>
     </View>
   );
 
+  const renderDropdown = (options, setFilter, isOpen, setIsOpen) => (
+    <Modal visible={isOpen} transparent animationType="fade">
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          {options.map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={styles.modalOption}
+              onPress={() => {
+                setFilter(option);
+                setIsOpen(false);
+              }}
+            >
+              <Text>{option}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <FontAwesome name="arrow-left" size={24} color="black" />
         </TouchableOpacity>
+        <Text style={styles.headerText}>Editar Empleos</Text>
         <TouchableOpacity>
           <FontAwesome name="user-circle" size={40} color="black" />
         </TouchableOpacity>
       </View>
 
+      {/* Search Filters */}
       <View style={styles.filters}>
         <View style={styles.filterItem}>
           <FontAwesome name="search" size={20} color="gray" />
@@ -166,28 +255,43 @@ export default function JobSearchScreen() {
         <View style={styles.filterRow}>
           <TouchableOpacity
             style={styles.filterButton}
-            onPress={() => setScheduleFilter("")}
+            onPress={() => setIsScheduleOpen(true)}
           >
-            <Text>Horario</Text>
+            <Text>{scheduleFilter || "Horario"}</Text>
             <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.filterButton}
-            onPress={() => setSalaryFilter("")}
+            onPress={() => setIsSalaryOpen(true)}
           >
-            <Text>Sueldo</Text>
+            <Text>{salaryFilter || "Sueldo"}</Text>
             <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* Dropdown Modals */}
+      {renderDropdown(
+        scheduleOptions,
+        setScheduleFilter,
+        isScheduleOpen,
+        setIsScheduleOpen
+      )}
+      {renderDropdown(
+        salaryOptions,
+        setSalaryFilter,
+        isSalaryOpen,
+        setIsSalaryOpen
+      )}
+
+      {/* Job List */}
       {loading ? (
         <ActivityIndicator size="large" color="#007BFF" />
       ) : (
         <FlatList
           data={filteredJobs}
           renderItem={renderJobItem}
-          keyExtractor={(item) => item.empleoId.toString()}
+          keyExtractor={(item) => item.empleoId}
           contentContainerStyle={styles.jobList}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -197,7 +301,6 @@ export default function JobSearchScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -209,6 +312,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   filters: {
     marginBottom: 16,
@@ -283,5 +391,23 @@ const styles = StyleSheet.create({
   applyButtonText: {
     color: "#FFF",
     textAlign: "center",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "white",
+    borderRadius: 8,
+    paddingVertical: 10,
+  },
+  modalOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
+    alignItems: "center",
   },
 });

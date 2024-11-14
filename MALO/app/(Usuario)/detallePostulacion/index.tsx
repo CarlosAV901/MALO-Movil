@@ -21,11 +21,10 @@ export default function Detalles() {
     titulo,
     descripcion,
     salario_minimo,
-    empresa,
     salario_maximo,
     horario,
     habilidades,
-    Ubicación,
+    empresaNombre
   } = useLocalSearchParams();
 
   const habilidadesArray = habilidades ? habilidades.split(",") : [];
@@ -104,7 +103,7 @@ export default function Detalles() {
             <View style={styles.row}>
               <View style={styles.column}>
                 <Text style={styles.company}>
-                  {empresa || "Empresa no disponible"}
+                  {empresaNombre || "Empresa no disponible"}
                 </Text>
               </View>
               <View style={styles.column}>

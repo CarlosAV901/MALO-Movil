@@ -14,6 +14,7 @@ import {
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { AuthContext } from "@app/context/AuthContext";
+import axios from "axios";
 
 export default function JobSearchScreen() {
   const router = useRouter();
@@ -28,35 +29,19 @@ export default function JobSearchScreen() {
   const [salaryFilter, setSalaryFilter] = useState("");
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [isSalaryOpen, setIsSalaryOpen] = useState(false);
-
+  const [applicantsCount, setApplicantsCount] = useState({});
+  const [companyNames, setCompanyNames] = useState({});
   const scheduleOptions = [
     "Tiempo completo",
     "Medio tiempo",
-    "Dia",
+    "Mañana",
     "Noche",
+    "Tarde",
     "",
   ];
   const salaryOptions = ["1000", "2000", "3000", ""];
   const authContext = useContext(AuthContext);
   const { isAuthenticated, logout } = authContext!;
-  const fetchJobs = async () => {
-    try {
-      const response = await fetch(
-        "https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos"
-      );
-      if (!response.ok) throw new Error("Error al obtener los empleos");
-
-      const data = await response.json();
-      const filteredByEmpresa = data.filter((job) => job.empresa_id);
-      setJobs(filteredByEmpresa);
-      setFilteredJobs(filteredByEmpresa);
-    } catch (error) {
-      console.error(error);
-      alert("Error al obtener los empleos");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     fetchJobs();
@@ -67,8 +52,68 @@ export default function JobSearchScreen() {
     return () => clearTimeout(delayFilter);
   }, [searchTerm, location, scheduleFilter, salaryFilter, jobs]);
 
+  const fetchCompanyNames = async () => {
+    try {
+      const response = await axios.get(
+        "https://malo-backend-empresas.onrender.com/api/Empresa/GetEmpresa"
+      );
+      const companies = response.data.reduce((acc, company) => {
+        acc[company.id] = company.nombre;
+        return acc;
+      }, {});
+      setCompanyNames(companies);
+    } catch (error) {
+      console.error("Error al obtener los nombres de las empresas:", error);
+    }
+  };
+
+  const fetchApplicantsCount = async (empleoID) => {
+    try {
+      const response = await axios.post(
+        "https://malo-backend-empleos.onrender.com/api/Aplicacion/contar-aplicaciones-por-empleo",
+        { empleoID }
+      );
+      setApplicantsCount((prevCounts) => ({
+        ...prevCounts,
+        [empleoID]: response.data, // Suponiendo que `count` es la respuesta de la API
+      }));
+    } catch (error) {
+      console.error("Error al contar los postulados:", error);
+    }
+  };
+
+  const fetchJobs = async () => {
+    try {
+      const response = await axios.get(
+        "https://malo-backend-empleos.onrender.com/api/Empleo/GetEmpleos"
+      );
+      const data = response.data.filter((job) => job.empresa_id);
+      setJobs(data);
+      setFilteredJobs(data);
+
+      // Obtener el conteo de postulados para cada empleo
+      data.forEach((job) => fetchApplicantsCount(job.empleoId));
+    } catch (error) {
+      console.error("Error al obtener los empleos:", error);
+      alert("Error al obtener los empleos");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanyNames();
+    fetchJobs();
+  }, []);
+
+  useEffect(() => {
+    const delayFilter = setTimeout(() => applyFilters(), 6000);
+    return () => clearTimeout(delayFilter);
+  }, [searchTerm, location, scheduleFilter, salaryFilter, jobs]);
+
   const onRefresh = async () => {
     setRefreshing(true);
+    await fetchCompanyNames();
     await fetchJobs();
     setRefreshing(false);
   };
@@ -104,28 +149,45 @@ export default function JobSearchScreen() {
       <View style={styles.jobDetails}>
         <Text style={styles.jobTitle}>{item.titulo}</Text>
         <Text style={styles.companyName}>
-          <FontAwesome name="check" size={20} color="gray" /> {item.descripcion}
+          {companyNames[item.empresa_id] || "Nombre no disponible"}
         </Text>
-        <Text style={styles.applicants}>Postulados: {item.applicants}</Text>
+        <Text style={styles.applicants}>
+         {item.horario}
+        </Text>
+        <Text style={styles.applicants}>
+        Minimo: ${item.salario_minimo}, Maximo: ${item.salario_maximo}
+        </Text>
+        <Text style={styles.applicants}>
+          Postulados: {applicantsCount[item.empleoId] || 0}
+        </Text>
+       
         {isAuthenticated ? (
           <TouchableOpacity
             style={styles.applyButton}
             onPress={() => {
+              const empresaId = item.empresa_id;
+              const empresaNombre =
+                companyNames && companyNames[empresaId]
+                  ? companyNames[empresaId]
+                  : "Nombre no disponible";
+
               router.push({
                 pathname: "/(Usuario)/detallePostulacion",
                 params: {
-                  user_id:user?.id,
-                  empleoId:item.empleoId,
-                  multimediaContenido: encodeURIComponent(item.multimediaContenido),
+                  user_id: user?.id,
+                  empleoId: item.empleoId,
+                  multimediaContenido: encodeURIComponent(
+                    item.multimediaContenido
+                  ),
                   titulo: item.titulo,
                   descripcion: item.descripcion,
-                  empresa: item.empresa,
                   horario: item.horario,
                   ubicacion: item.ubicacion,
                   salario_minimo: item.salario_minimo,
                   salario_maximo: item.salario_maximo,
+                  empresaNombre: empresaNombre,
                 },
-              })
+              });
             }}
           >
             <Text style={styles.applyButtonText}>Postular</Text>
@@ -133,8 +195,8 @@ export default function JobSearchScreen() {
         ) : (
           <TouchableOpacity
             style={styles.applyButton}
-            onPress={() =>
-              router.push("/login")}>
+            onPress={() => router.push("/login")}
+          >
             <Text style={styles.applyButtonText}>Inicia Sesion</Text>
           </TouchableOpacity>
         )}
@@ -170,6 +232,7 @@ export default function JobSearchScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <FontAwesome name="arrow-left" size={24} color="black" />
         </TouchableOpacity>
+        <Text style={styles.headerText}>Buscar empleos</Text>
         <TouchableOpacity>
           <FontAwesome name="user-circle" size={40} color="black" />
         </TouchableOpacity>
@@ -255,6 +318,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   filters: {
     marginBottom: 16,

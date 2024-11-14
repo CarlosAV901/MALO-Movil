@@ -140,41 +140,13 @@ export default function JobSearchScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <FontAwesome name="arrow-left" size={24} color="black" />
         </TouchableOpacity>
+        <Text style={styles.headerText}>Postulaciones</Text>
         <TouchableOpacity>
           <FontAwesome name="user-circle" size={40} color="black" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.filters}>
-        <View style={styles.filterItem}>
-          <FontAwesome name="search" size={20} color="gray" />
-          <TextInput
-            placeholder="Buscar empleo..."
-            style={styles.filterInput}
-            value={searchTerm}
-            onChangeText={setSearchTerm}
-          />
-        </View>
-        <View style={styles.filterItem}>
-          <FontAwesome name="map-marker" size={20} color="gray" />
-          <TextInput
-            placeholder="Ciudad o estado..."
-            style={styles.filterInput}
-            value={location}
-            onChangeText={setLocation}
-          />
-        </View>
-        <View style={styles.filterRow}>
-          <TouchableOpacity style={styles.filterButton} onPress={() => setScheduleFilter("")}>
-            <Text>Horario</Text>
-            <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterButton} onPress={() => setSalaryFilter("")}>
-            <Text>Sueldo</Text>
-            <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      
 
       {loading ? (
         <ActivityIndicator size="large" color="#007BFF" />
@@ -203,6 +175,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   filters: {
     marginBottom: 16,

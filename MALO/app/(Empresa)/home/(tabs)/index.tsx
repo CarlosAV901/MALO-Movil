@@ -12,6 +12,7 @@ import {
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { AuthContext } from "@app/context/AuthContext";
+import axios from "axios";
 
 export default function JobSearchScreen() {
   const router = useRouter();
@@ -21,7 +22,8 @@ export default function JobSearchScreen() {
   const [usuarios, setUsuarios] = useState([]); // Nuevo estado para almacenar usuarios
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
+  const [applicantsCount, setApplicantsCount] = useState({});
+  const [companyNames, setCompanyNames] = useState({});
   const fetchJobs = async () => {
     try {
       const response = await fetch(
@@ -30,10 +32,12 @@ export default function JobSearchScreen() {
       if (!response.ok) {
         throw new Error("Error al obtener los empleos");
       }
+      
       const data = await response.json();
       const filteredByEmpresa = data.filter(
         (job) => job.empresa_id === user?.id
       );
+      data.forEach((job) => fetchApplicantsCount(job.empleoId));
       setJobs(filteredByEmpresa);
       setFilteredJobs(filteredByEmpresa);
     } catch (error) {
@@ -71,15 +75,45 @@ export default function JobSearchScreen() {
   };
 
   useEffect(() => {
+    fetchCompanyNames();
     fetchJobs();
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
+    await fetchCompanyNames();
     await fetchJobs();
     setRefreshing(false);
   };
 
+  const fetchCompanyNames = async () => {
+    try {
+      const response = await axios.get(
+        "https://malo-backend-empresas.onrender.com/api/Empresa/GetEmpresa"
+      );
+      const companies = response.data.reduce((acc, company) => {
+        acc[company.id] = company.nombre;
+        return acc;
+      }, {});
+      setCompanyNames(companies);
+    } catch (error) {
+      console.error("Error al obtener los nombres de las empresas:", error);
+    }
+  };
+  const fetchApplicantsCount = async (empleoID) => {
+    try {
+      const response = await axios.post(
+        "https://malo-backend-empleos.onrender.com/api/Aplicacion/contar-aplicaciones-por-empleo",
+        { empleoID }
+      );
+      setApplicantsCount((prevCounts) => ({
+        ...prevCounts,
+        [empleoID]: response.data, // Suponiendo que `count` es la respuesta de la API
+      }));
+    } catch (error) {
+      console.error("Error al contar los postulados:", error);
+    }
+  };
   const renderJobItem = ({ item }) => (
     <View style={styles.jobCard}>
       <Image
@@ -89,7 +123,14 @@ export default function JobSearchScreen() {
       <View style={styles.jobDetails}>
         <Text style={styles.jobTitle}>{item.titulo}</Text>
         <Text style={styles.companyName}>
-          <FontAwesome name="check" size={20} color="gray" /> {item.descripcion}
+          {companyNames[item.empresa_id] || "Nombre no disponible"}
+        </Text>
+        <Text style={styles.companyName}>{item.horario}</Text>
+        <Text style={styles.companyName}>
+          Minimo: ${item.salario_minimo}, Maximo: ${item.salario_maximo}
+        </Text>
+        <Text style={styles.companyName}>
+          Postulados: {applicantsCount[item.empleoId] || 0}
         </Text>
         <TouchableOpacity
           style={styles.applyButton}
@@ -132,7 +173,7 @@ export default function JobSearchScreen() {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
           />
-          <Text style={styles.sectionTitle}>Usuarios aplicados:</Text>
+          <Text style={styles.sectionTitle}>Usuarios aplicados</Text>
           <FlatList
             data={usuarios} // Muestra los usuarios
             renderItem={renderUsuarioItem}
