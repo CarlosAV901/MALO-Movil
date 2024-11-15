@@ -53,6 +53,7 @@ export default function PerfilScreen() {
 
   return (
     <View style={styles.container}>
+
       {/* ScrollView con el resto de la información */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Sección del encabezado con separación blanca */}
@@ -61,10 +62,10 @@ export default function PerfilScreen() {
             <FontAwesome name="arrow-left" size={20} color="black" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Perfil</Text>
+          <TouchableOpacity style={styles.logoutButton} onPress={() => Alert.alert("Cerrar sesión", "Sesión cerrada.")}>
+            <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Espacio extra debajo del encabezado */}
-        <View style={styles.spacing}></View>
 
         {/* Foto de perfil con icono de edición en la parte superior */}
         <View style={styles.header}>
@@ -139,17 +140,18 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    paddingTop: 10, // Ajusta la distancia de la parte superior
+    paddingTop: 60, // Añade espacio superior para que esté debajo del encabezado
+    marginTop: 10,  // Ajusta la posición para que quede debajo del encabezado
   },
   profileImageContainer: {
     position: "relative",
     alignItems: "center",
-    marginBottom: 20, // Separación hacia abajo con la información
+    marginBottom: 20,
   },
   profileImage: {
     width: 120,
     height: 120,
-    borderRadius: 60,  // Círculo
+    borderRadius: 60,
     borderWidth: 3,
     borderColor: "#FFFFFF",
   },
@@ -177,24 +179,47 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
   },
+
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 15,
-    backgroundColor: "#FFFFFF",  // Color blanco para la separación
-    borderBottomWidth: 2, // Línea debajo de la separación
-    borderBottomColor: "#ddd", // Color de la línea
-  },
-  backButton: {
-    marginRight: 10,
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    backgroundColor: "#FFFFFF",
+    width: "112%", // Hace que el contenedor abarque todo el ancho
+    position: "absolute",
+    height: 50,
+    zIndex: 1, // Asegura que el encabezado esté sobre la imagen
+
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
+    textAlign: "left",
+    position: "absolute",
+    left: 50,
   },
+  logoutButton: {
+    backgroundColor: "#FF6F61",
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  logoutButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+
+
+  backButton: {
+    marginRight: 10,
+  },
+
   spacing: {
-    height: 20,  // Añadido para crear un espacio blanco debajo del encabezado
-    backgroundColor: "#FFFFFF", // Fondo blanco para asegurar que se vea
+    height: 20,
+    backgroundColor: "#FFFFFF",
   },
   nameText: {
     fontSize: 22,
