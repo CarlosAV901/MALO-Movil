@@ -1,8 +1,9 @@
 import React, { useState, useContext } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image, Modal } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { AuthContext } from "@app/context/AuthContext";
 import { router } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function AgregarEmpleo() {
   const { user } = useContext(AuthContext);
@@ -13,7 +14,16 @@ export default function AgregarEmpleo() {
   const [salarioMaximo, setSalarioMaximo] = useState<number>(0);
   const [horario, setHorario] = useState<string>("");
   const [multimediaContenido, setMultimediaContenido] = useState<string>("");
-
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [scheduleFilter, setScheduleFilter] = useState("");
+  const scheduleOptions = [
+    "Tiempo completo",
+    "Medio tiempo",
+    "Mañana",
+    "Noche",
+    "Tarde",
+    "",
+  ];
   const handlePickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
@@ -79,7 +89,26 @@ export default function AgregarEmpleo() {
     }
   };
   
-
+  const renderDropdown = (options, setFilter, isOpen, setIsOpen) => (
+    <Modal visible={isOpen} transparent animationType="fade">
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          {options.map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={styles.modalOption}
+              onPress={() => {
+                setFilter(option);
+                setIsOpen(false);
+              }}
+            >
+              <Text>{option}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </Modal>
+  );
   return (
     <ScrollView style={{ backgroundColor: '#F5F5F5', flex: 1 }}>
       <View style={styles.container}>
@@ -96,7 +125,19 @@ export default function AgregarEmpleo() {
         <TextInput style={styles.input} value={String(salarioMaximo)} onChangeText={(text) => setSalarioMaximo(Number(text))} placeholder="Salario Máximo" keyboardType="numeric" />
         <Text style={styles.label}>Horario</Text>
         <TextInput style={styles.input} value={horario} onChangeText={setHorario} placeholder="Horario" />
-        
+        {renderDropdown(
+        scheduleOptions,
+        setScheduleFilter,
+        isScheduleOpen,
+        setIsScheduleOpen
+      )}
+        <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setIsScheduleOpen(true)}
+          >
+            <Text>{scheduleFilter || "Horario"}</Text>
+            <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
+          </TouchableOpacity>
         {/* Selector de imagen */}
         <Text style={styles.label}>Multimedia</Text>
         {multimediaContenido ? (
@@ -157,5 +198,34 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderRadius: 30,
+    borderColor: "#DDD",
+    flex: 1,
+    marginLeft: 8,
+  },
+   modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "white",
+    borderRadius: 8,
+    paddingVertical: 10,
+  },
+  modalOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
+    alignItems: "center",
   },
 });

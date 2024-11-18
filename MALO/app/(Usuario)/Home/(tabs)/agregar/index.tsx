@@ -106,12 +106,12 @@ export default function JobSearchScreen() {
       {/* <Image source={{ uri: item.multimediaContenido }} style={styles.jobImage} /> */}
       <View style={styles.jobDetails}>
         <Text style={styles.jobTitle}>{item.titulo}</Text>
-        <Text style={styles.companyName}>
+       {/*  <Text style={styles.companyName}>
           <FontAwesome name="check" size={20} color="gray" /> {item.descripcion}
-        </Text>
+        </Text> */}
         <TouchableOpacity
           style={styles.applyButton}
-          onPress={() =>
+          /* onPress={() =>
             router.push({
               pathname: "/(Usuario)/detallePostulacion",
               params: {
@@ -126,9 +126,9 @@ export default function JobSearchScreen() {
                 empleoId: item.empleoId,
               },
             })
-          }
+          } */
         >
-          <Text style={styles.applyButtonText}>Ver postulacion</Text>
+          <Text style={styles.applyButtonText}>Postulado</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   },
   applyButton: {
     marginTop: 8,
-    backgroundColor: "#007BFF",
+    backgroundColor: "#dddd",
     padding: 10,
     borderRadius: 8,
   },
