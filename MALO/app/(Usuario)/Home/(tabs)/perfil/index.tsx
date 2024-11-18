@@ -1,38 +1,91 @@
-import React, { useState, useContext, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image, Modal, FlatList } from "react-native";
+import React, { useState, useEffect, useContext } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+  ScrollView,
+  Image,
+  ActivityIndicator,
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { FontAwesome } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { AuthContext } from "@app/context/AuthContext";
-import { router } from "expo-router";
 import axios from "axios";
-import { getEstados, getLocalidades, getMunicipios } from "@app/services/registrosServices";
-import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
-export default function AgregarEmpleo() {
+export default function PerfilScreen() {
+  const [loading, setLoading] = useState(false); 
+  const navigation = useNavigation();
   const { user } = useContext(AuthContext);
-  const [nombre, setNombre] = useState<string>("");
-  const [apellido, setApellido] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [telefono, setTelefono] = useState<string>("");
-  const [habilidades, setHabilidades] = useState<string>("");
-  const [descripcion, setDescripcion] = useState<string>("");
   const [imagenPerfil, setImagenPerfil] = useState<string>("");
-  const [selectedState, setSelectedState] = useState('');
-  const [selectedMunicipality, setSelectedMunicipality] = useState('');
-  const [selectedLocality, setSelectedLocality] = useState('');
-  const [estados, setEstados] = useState<string>('');
-  const [municipios, setMunicipios] = useState<string>('');
-  const [localidades, setLocalidades] = useState<string>('');
-  const [isStateModalVisible, setIsStateModalVisible] = useState(false);
-  const [isMunicipalityModalVisible, setIsMunicipalityModalVisible] = useState(false);
-  const [isLocalityModalVisible, setIsLocalityModalVisible] = useState(false);
+  const [habilidades, setHabilidades] = useState<string[]>([
+    "Skill aquí",
+    "Skill aquí",
+    "Skill aquí",
+  ]);
+  const [experiencias, setExperiencias] = useState<string>("");
+  const [documento, setDocumento] = useState<any>(null);
+  const [usuario, setUsuario] = useState({
+    nombre: "",
+    apellido: "",
+    email: "",
+    fechaNacimiento: "",
+    telefono: "",
+    estado: "",
+    municipio: "",
+    localidad: "",
+  });
+
+  useEffect(() => {
+    cargarDatosUsuario();
+  }, []);
+
+  const cargarDatosUsuario = async () => {
+    try {
+      const response = await axios.post(
+        "https://malo-backend.onrender.com/api/Usuario/ObtenerUsuarioPorId",
+        {
+          id: user?.id, // Enviar ID por el cuerpo de la solicitud
+        }
+      );
+
+      const datosUsuario = response.data;
+
+      // Actualiza los estados con los datos recibidos
+      setImagenPerfil(datosUsuario.imagenPerfil || "");
+      setExperiencias(
+        datosUsuario.experiencias || "No has agregado experiencias."
+      );
+      setHabilidades(datosUsuario.habilidadesDescripciones || []);
+      setUsuario({
+        nombre: datosUsuario.nombre,
+        apellido: datosUsuario.apellido,
+        email: datosUsuario.email,
+        fechaNacimiento: datosUsuario.fecha_nacimiento,
+        telefono: datosUsuario.telefono,
+        estado: datosUsuario.estado,
+        municipio: datosUsuario.municipio,
+        localidad: datosUsuario.localidad,
+      });
+    } catch (error) {
+      console.error("Error al cargar los datos del usuario:", error);
+      Alert.alert("Error", "No se pudieron cargar los datos del usuario.");
+    }
+  };
 
   const handlePickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
-      Alert.alert("Permisos requeridos", "Se necesitan permisos para acceder a la galería.");
+      Alert.alert(
+        "Permisos requeridos",
+        "Se necesitan permisos para acceder a la galería."
+      );
       return;
     }
-
 
     const pickerResult = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -42,27 +95,31 @@ export default function AgregarEmpleo() {
     if (!pickerResult.canceled) {
       const imageUri = pickerResult.assets[0].uri;
       setImagenPerfil(imageUri);
+      setLoading(true);
+      await changefoto(imageUri);
+      setLoading(false);
     }
   };
 
-  const handleSubmit = async () => {
+  const changefoto = async (imageUri: string) => {
     if (!user?.token) {
       Alert.alert("Error", "No se pudo encontrar el token de autenticación.");
       return;
     }
-    const multimediaNombre = imagenPerfil.split("/").pop();
-    const multimediaTipo = "image/jpeg";
-    
-    const formData = new FormData();
-    formData.append('UsuarioId', user.id);  
-    if (imagenPerfil) {
 
+    const multimediaNombre = imageUri.split("/").pop();
+    const multimediaTipo = "image/jpeg";
+
+    const formData = new FormData();
+    formData.append("UsuarioId", user.id);
+    if (imageUri) {
       formData.append("archivo", {
-        uri: imagenPerfil,
+        uri: imageUri,
         name: multimediaNombre,
         type: multimediaTipo,
       } as any);
     }
+
     try {
       const responseMultimedia = await axios.post(
         "https://malo-backend.onrender.com/api/Usuario/ActualizarMultimedia",
@@ -73,268 +130,305 @@ export default function AgregarEmpleo() {
           },
         }
       );
-  
+
       Alert.alert("Éxito", "Multimedia actualizada exitosamente");
     } catch (error) {
-      console.error("Error de Axios (Multimedia):", error.response?.data || error.message);
+      console.error(
+        "Error de Axios (Multimedia):",
+        error.response?.data || error.message
+      );
       Alert.alert(
         "Error",
         error.response?.data?.message || "Error en la respuesta del servidor"
       );
     }
-  
-    const userData = {
-    UsuarioId:user.id,
-    nombre: nombre,
-    email: email,
-    apellido: apellido,
-    telefono: telefono,
-    estado:estados,
-    municipio: municipios,
-    localidad: localidades,
-    habilidades: '3,7,10',
-    descripcion: descripcion,
-    }
-  
-    try {
-      const response = await axios.post('https://malo-backend.onrender.com/api/Usuario/ActualizarUsuario', userData, {
-        headers: {
-          'Content-Type': 'application/json', // Make sure the correct content type is set
-          'Authorization': `Bearer ${user.token}`,
-        }
-      });
-      console.log(response);
-      Alert.alert("Éxito", "Usuario agregado exitosamente");
-      router.push("/(Usuario)/Home/(tabs)");
-    } catch (error) {
-      console.error("Error de Axios:", error.response?.data || error.message);
-      Alert.alert("Error", error.response?.data?.message || "Error en la respuesta del servidor");
-    }
-  };
-  useEffect(() => {
-    const fetchEstados = async () => {
-      const estadosData = await getEstados();
-      setEstados(estadosData);
-    };
-    fetchEstados();
-  }, []);
-
-  useEffect(() => {
-    if (selectedState) {
-      const fetchMunicipios = async () => {
-        const municipiosData = await getMunicipios(selectedState.cve_ent);
-        setMunicipios(municipiosData);
-      };
-      fetchMunicipios();
-    }
-  }, [selectedState]);
-
-
-  useEffect(() => {
-    if (selectedMunicipality) {
-      const fetchLocalidades = async () => {
-        const municipiosCode = `${selectedState.cve_ent}${selectedMunicipality.cve_mun}`;
-        const localidadesData = await getLocalidades(municipiosCode);
-        setLocalidades(localidadesData);
-      };
-      fetchLocalidades();
-    }
-  }, [selectedMunicipality]);
-
-  const handleStateSelect = (estado) => {
-    setSelectedState(estado);
-    setEstados(estado.nomgeo)
-    setSelectedMunicipality('');
-    setSelectedLocality('');
-    setIsStateModalVisible(false);
   };
 
-  const handleMunicipalitySelect = (municipio) => {
-    setSelectedMunicipality(municipio);
-    setMunicipios(municipio.nomgeo); // Guarda solo el nombre del municipio seleccionado
-    setSelectedLocality('');
-    setIsMunicipalityModalVisible(false);
-  };
-
-  const handleLocalitySelect = (localidad) => {
-    setSelectedLocality(localidad);
-    setLocalidades(localidad.nomgeo); // Guarda solo el nombre de la localidad seleccionada
-    setIsLocalityModalVisible(false);
+  const handleSave = () => {
+    router.push({
+      pathname: "/(Usuario)/actualizarUsuario",
+      params: {
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
+        email: usuario.email,
+        fechaNacimiento: usuario.fechaNacimiento,
+        telefono: usuario.telefono,
+        estado: usuario.estado,
+        municipio: usuario.municipio,
+        localidad: usuario.localidad,
+        imagen: encodeURIComponent(imagenPerfil),
+      },
+    });
   };
 
   return (
-    <ScrollView style={{ backgroundColor: '#F5F5F5', flex: 1 }}>
-      <View style={styles.container}>
-        <Text style={styles.label}>Nombre</Text>
-        <TextInput style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Nombre" />
-        <Text style={styles.label}>Apellido</Text>
-        <TextInput style={styles.input} value={apellido} onChangeText={setApellido} placeholder="Apellido" />
-        <Text style={styles.label}>Email</Text>
-        <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email" keyboardType="email-address" />
-        <Text style={styles.label}>Telefono</Text>
-        <TextInput style={styles.input} value={telefono} onChangeText={setTelefono} placeholder="Telefono" />
-        <Text style={styles.label}>Descripcion</Text>
-        <TextInput style={styles.input} value={descripcion} onChangeText={setDescripcion} placeholder="descripcion" />
-        {/* Dropdown para Estado */}
-        <TouchableOpacity style={styles.dropdown} onPress={() => setIsStateModalVisible(true)}>
-          <Text>{selectedState ? selectedState.nomgeo : 'Seleccionar Estado'}</Text>
-          <MaterialIcons style={{paddingLeft:135}} name="arrow-drop-down" size={30} color="black" />
-        </TouchableOpacity>
-        <Modal visible={isStateModalVisible} animationType="slide" transparent={true}>
-          <View style={styles.modalContainer}>
-            <FlatList
-              data={estados}
-              keyExtractor={(item) => item.cve_ent}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.modalItem} onPress={() => handleStateSelect(item)}>
-                  <Text>{item.nomgeo}</Text>
-                </TouchableOpacity>
-              )}
+    <View style={styles.container}>
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      )}
+      {/* ScrollView con el resto de la información */}
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Sección del encabezado con separación blanca */}
+        <View style={styles.headerContainer}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <FontAwesome name="arrow-left" size={20} color="black" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Perfil</Text>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => Alert.alert("Cerrar sesión", "Sesión cerrada.")}
+          >
+            <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Foto de perfil con icono de edición en la parte superior */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={handlePickImage}
+            style={styles.profileImageContainer}
+          >
+            {imagenPerfil ? (
+              <Image
+                source={{ uri: imagenPerfil }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Text style={styles.imagePlaceholderText}>
+                  Seleccionar imagen
+                </Text>
+              </View>
+            )}
+            <FontAwesome
+              name="pencil"
+              size={18}
+              color="gray"
+              style={styles.editIcon}
             />
-            <TouchableOpacity style={styles.modalCloseButton} onPress={() => setIsStateModalVisible(false)}>
-              <Text>Cerrar</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Información del usuario */}
+        <View style={styles.section}>
+          <Text
+            style={styles.nameText}
+          >{`${usuario.nombre} ${usuario.apellido}`}</Text>
+          <Text style={styles.contactText}>{usuario.email}</Text>
+          <Text style={styles.contactText}>{usuario.fechaNacimiento}</Text>
+          <Text style={styles.contactText}>{usuario.telefono}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Lugar de residencia</Text>
+          <Text style={styles.sectionSubtitle}>
+            {" "}
+            {`${usuario.estado}, ${usuario.municipio}, ${usuario.localidad}`}
+          </Text>
+        </View>
+
+        {/* Campo de experiencias (sin TextInput, solo un Text) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Experiencias</Text>
+          <Text style={styles.sectionSubtitle}>
+            {experiencias || "No has agregado experiencias."}
+          </Text>
+        </View>
+
+        {/* Habilidades */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Habilidades</Text>
+          <View style={styles.skillsContainer}>
+            {habilidades.map((skill, index) => (
+              <TouchableOpacity key={index} style={styles.skillButton}>
+                <Text style={styles.skillText}>{skill} ✕</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.addSkillButton}>
+              <Text style={styles.addSkillText}>Otro +</Text>
             </TouchableOpacity>
           </View>
-        </Modal>
+        </View>
 
-        {/* Dropdown para Municipio */}
-        <TouchableOpacity style={styles.dropdown} onPress={() => setIsMunicipalityModalVisible(true)}>
-          <Text>{selectedMunicipality ? selectedMunicipality.nomgeo : 'Seleccionar Municipio'}</Text>
-          <MaterialIcons style={{paddingLeft:120}} name="arrow-drop-down" size={30} color="black" />
-        </TouchableOpacity>
-        <Modal visible={isMunicipalityModalVisible} animationType="slide" transparent={true}>
-          <View style={styles.modalContainer}>
-            <FlatList
-              data={municipios}
-              keyExtractor={(item) => item.cve_mun}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.modalItem} onPress={() => handleMunicipalitySelect(item)}>
-                  <Text>{item.nomgeo}</Text>
-                </TouchableOpacity>
-              )}
+        {/* Botón para subir CV */}
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.documentButton}>
+            <FontAwesome
+              name="upload"
+              size={18}
+              color="gray"
+              style={styles.documentIcon}
             />
-            <TouchableOpacity style={styles.modalCloseButton} onPress={() => setIsMunicipalityModalVisible(false)}>
-              <Text>Cerrar</Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
+            <Text style={styles.documentButtonText}>Subir CV</Text>
+          </TouchableOpacity>
+          {documento && (
+            <Text style={styles.documentText}>{documento.name}</Text>
+          )}
+        </View>
 
-        {/* Dropdown para Localidad */}
-        <TouchableOpacity style={styles.dropdown} onPress={() => setIsLocalityModalVisible(true)}>
-          <Text>{selectedLocality ? selectedLocality.nomgeo : 'Seleccionar Localidad'}</Text>
-          <MaterialIcons style={{paddingLeft:120}} name="arrow-drop-down" size={30} color="black" />
+        {/* Botón para guardar */}
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.saveButtonText}>Editar perfil</Text>
         </TouchableOpacity>
-        <Modal visible={isLocalityModalVisible} animationType="slide" transparent={true}>
-          <View style={styles.modalContainer}>
-            <FlatList
-              data={localidades}
-              keyExtractor={(item) => item.cve_loc}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.modalItem} onPress={() => handleLocalitySelect(item)}>
-                  <Text>{item.nomgeo}</Text>
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity style={styles.modalCloseButton} onPress={() => setIsLocalityModalVisible(false)}>
-              <Text>Cerrar</Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
-
-        <Text style={styles.label}>Imagen de Perfil</Text>
-        {imagenPerfil ? (
-          <Image source={{ uri: imagenPerfil }} style={{ width: 200, height: 200, marginBottom: 10 }} />
-        ) : (
-          <Text style={styles.placeholderText}>No se ha seleccionado ninguna imagen</Text>
-        )}
-        <TouchableOpacity style={styles.button} onPress={handlePickImage}>
-          <Text style={styles.buttonText}>Seleccionar Imagen</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Actualizar datos</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-  },
-  label: {
-    marginBottom: 5,
-    fontWeight: "bold",
-  },
-  input: {
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 15,
-  },
-  placeholderText: {
-    marginBottom: 10,
-    fontStyle: "italic",
-    color: "#888",
-  },
-  button: {
-    backgroundColor: "#007BFF",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  submitButton: {
-    backgroundColor: "#28A745",
-    padding: 15,
-    borderRadius: 5,
-    alignItems: "center",
-  },
-  submitButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  dropdown: {
-    flexDirection: 'row',
-    borderWidth: 2,
-    borderColor: '#ddd',
-    borderRadius: 30,
-    padding: 10,
-    marginBottom: 15,
-    alignItems: 'center',
-    width: '100%',
-  },
-  errorText: {
-    color: 'red',
-    marginBottom: 10,
-  },
-  modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 20,
+    backgroundColor: "#3066be",
   },
-  modalItem: {
-    paddingVertical: 10,
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)', // Fondo semi-transparente
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1, // Asegura que el spinner esté por encima del contenido
+  },
+  header: {
+    alignItems: "center",
+    paddingTop: 60, // Añade espacio superior para que esté debajo del encabezado
+    marginTop: 10, // Ajusta la posición para que quede debajo del encabezado
+  },
+  profileImageContainer: {
+    position: "relative",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  profileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+  },
+  imagePlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#E0E0E0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  imagePlaceholderText: {
+    color: "#888",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  editIcon: {
+    position: "absolute",
+    bottom: 5,
+    right: 5,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 15,
+    padding: 4,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+  },
+
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 8,
     paddingHorizontal: 15,
-    backgroundColor: '#fff',
-    marginBottom: 5,
+    backgroundColor: "#FFFFFF",
+    width: "112%", // Hace que el contenedor abarque todo el ancho
+    position: "absolute",
+    height: 50,
+    zIndex: 1, // Asegura que el encabezado esté sobre la imagen
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "left",
+    position: "absolute",
+    left: 50,
+  },
+  logoutButton: {
+    backgroundColor: "#FF6F61",
+    paddingVertical: 5,
+    paddingHorizontal: 10,
     borderRadius: 5,
   },
-  modalCloseButton: {
-    backgroundColor: '#3a78d5',
-    padding: 10,
-    alignItems: 'center',
-    marginTop: 10,
+  logoutButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
   },
-  closeModalText: {
-    color: '#fff',
-    fontWeight: 'bold',
+
+  backButton: {
+    marginRight: 10,
+  },
+
+  spacing: {
+    height: 20,
+    backgroundColor: "#FFFFFF",
+  },
+  nameText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#333333",
+  },
+  contactText: {
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+  },
+  section: {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: "#F9F9F9",
+    borderRadius: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+  },
+  skillsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 5,
+  },
+  skillButton: {
+    backgroundColor: "#E0F7FA",
+    borderRadius: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 5,
+    marginBottom: 5,
+  },
+  saveButton: {
+    backgroundColor: "#007BFF",
+    borderRadius: 5,
+    padding: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    width: "80%",
+    marginVertical: 20,
+  },
+  saveButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
   },
 });

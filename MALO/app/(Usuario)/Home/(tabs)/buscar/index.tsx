@@ -227,6 +227,11 @@ export default function JobSearchScreen() {
 
   return (
     <View style={styles.container}>
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      )}
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -312,6 +317,17 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: "#F5F5F5",
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)', // Fondo semi-transparente
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1, // Asegura que el spinner esté por encima del contenido
   },
   header: {
     flexDirection: "row",
