@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView,
 import * as ImagePicker from "expo-image-picker";
 import { AuthContext } from "@app/context/AuthContext";
 import { router } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 
 export default function AgregarEmpleo() {
   const { user } = useContext(AuthContext);
@@ -112,6 +112,15 @@ export default function AgregarEmpleo() {
   return (
     <ScrollView style={{ backgroundColor: '#F5F5F5', flex: 1 }}>
       <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <FontAwesome name="arrow-left" size={24} color="black" />
+        </TouchableOpacity>
+        <Text style={styles.headerText}>Agregar Empleos</Text>
+        <TouchableOpacity onPress={() => router.navigate('/(Empresa)/home/(tabs)/perfil')}>
+          <FontAwesome name="user-circle" size={40} color="black" />
+        </TouchableOpacity>
+      </View>
         {/* Campos de texto */}
         <Text style={styles.label}>Título</Text>
         <TextInput style={styles.input} value={titulo} onChangeText={setTitulo} placeholder="Título del empleo" />
@@ -165,6 +174,17 @@ const styles = StyleSheet.create({
   label: {
     marginBottom: 5,
     fontWeight: "bold",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   input: {
     borderColor: "#ccc",
