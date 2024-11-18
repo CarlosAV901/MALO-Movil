@@ -1,6 +1,6 @@
 import React, { createContext, useState, ReactNode } from "react";
 import { loginService } from "@app/services/authServices";
-
+import { decode as base64Decode } from 'base-64';
 // Modificamos el contexto para incluir 'user'
 interface User {
   email: string;
@@ -25,6 +25,35 @@ export const AuthContext = createContext<AuthContextProps>({
   logout: () => {},
 });
 
+// Validar formato del JWT
+const isValidJWT = (token: string) => token && token.split('.').length === 3;
+
+const decodeToken = (token: string) => {
+  if (!isValidJWT(token)) throw new Error("El token no tiene un formato válido");
+
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const decodedPayload = typeof atob !== 'undefined' ? atob(base64) : base64Decode(base64);
+    return JSON.parse(decodedPayload);
+  } catch (error) {
+    console.error("Error al decodificar el token:", error.message);
+    throw new Error("Error al decodificar el token. Verifica que sea un JWT válido.");
+  }
+};
+
+
+
+
+// Validar los campos requeridos en el token decodificado
+const validateDecodedToken = (decodedToken: any) => {
+  const requiredFields = ['sub', 'email', 'rol', 'exp'];
+  requiredFields.forEach((field) => {
+    if (!decodedToken[field]) {
+      throw new Error(`El campo '${field}' falta en el token`);
+    }
+  });
+};
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -33,32 +62,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, contrasena: string, isEmpresa: boolean) => {
     setIsLoading(true);
     try {
-      const apiUrl = isEmpresa ? "https://malo-backend-empresas.onrender.com" : "https://malo-backend.onrender.com";
+      const apiUrl = isEmpresa
+        ? "https://malo-backend-empresas.onrender.com"
+        : "https://malo-backend.onrender.com";
+  
+      // Llamar al servicio de autenticación
       const data = await loginService(email, contrasena, apiUrl);
-      
-      // Suponiendo que el token contiene la información que necesitas
       const { token } = data;
-      
-      // Decodificar el token (suponiendo que usas JWT y tienes un método para decodificarlo)
-      const decodedToken = decodeToken(token); // Necesitarás implementar esta función o usar una librería como jwt-decode
-
+  
+      // Decodificar y validar el token
+      const decodedToken = decodeToken(token);
+      validateDecodedToken(decodedToken);
+  
+      // Asignar el usuario autenticado
       setUser({
         email: decodedToken.email,
         rol: decodedToken.rol,
         id: decodedToken.sub,
-        token: token,
+        token,
       });
-      setIsAuthenticated(true); 
+  
+      setIsAuthenticated(true);
     } catch (error) {
-      throw new Error("Credenciales incorrectas");
+      console.error("Error durante el login:", error.message);
+      throw new Error("Credenciales incorrectas o token inválido");
     } finally {
       setIsLoading(false);
     }
   };
-
+  
+  // Logout
   const logout = () => {
     setIsAuthenticated(false);
-    setUser(null); // Limpiamos el usuario al cerrar sesión
+    setUser(null);
   };
 
   return (
@@ -68,8 +104,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Implementación de decodeToken (ejemplo)
-const decodeToken = (token: string) => {
-  const payload = token.split('.')[1];
-  return JSON.parse(atob(payload)); // Esto funciona solo si el token está en base64
-};
+
