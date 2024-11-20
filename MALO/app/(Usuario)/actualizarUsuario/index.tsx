@@ -53,7 +53,6 @@ export default function AgregarEmpleo() {
     estado:estados,
     municipio: municipios,
     localidad: localidades,
-    habilidades: '3,7,10',
     descripcion: descripcionA,
     }
   

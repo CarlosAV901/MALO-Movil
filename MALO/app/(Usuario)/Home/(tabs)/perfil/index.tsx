@@ -8,8 +8,11 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  Button,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { AuthContext } from "@app/context/AuthContext";
@@ -160,7 +163,96 @@ export default function PerfilScreen() {
       },
     });
   };
+  const [documentosUsuario, setDocumentosUsuario] = useState<Documento[]>([]);
 
+  // Obtener documentos y filtrar por usuario_id
+  useEffect(() => {
+    const fetchAndFilterDocumentos = async () => {
+      try {
+        const response = await axios.get<Documento[]>(
+          "https://malo-backend-documentos.onrender.com/api/Documento/GetDocumentos"
+        );
+        const documentosFiltrados = response.data.filter((doc) => doc.usuario_id === user.id);
+        setDocumentosUsuario(documentosFiltrados);
+      } catch (error) {
+        console.error("Error al obtener documentos:", error);
+      }
+    };
+
+    fetchAndFilterDocumentos();
+  }, [user.id]);
+/////
+  const handlePickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*', // Permite seleccionar cualquier tipo de archivo
+        copyToCacheDirectory: true, // Asegura que el archivo esté accesible localmente
+      });
+  
+      console.log("Resultado del DocumentPicker:", result);
+  
+      // Verificar si la operación fue cancelada
+      if (result.canceled) {
+        Alert.alert("Operación cancelada", "No se seleccionó ningún documento.");
+        return;
+      }
+  
+      // Obtener el URI del primer archivo
+      const documentUri = result.assets && result.assets[0]?.uri;
+  
+      if (!documentUri) {
+        Alert.alert("Error", "No se encontró la URI del archivo seleccionado.");
+        return;
+      }
+  
+      setDocumento(documentUri); // Guardar el documento seleccionado
+      setLoading(true);
+      await uploadDocument(documentUri); // Subir el archivo
+      setLoading(false);
+    } catch (error) {
+      console.error("Error al seleccionar el documento:", error);
+      Alert.alert("Error", "No se pudo seleccionar el documento.");
+    }
+  };
+  
+  const uploadDocument = async (documentUri: string) => {
+    try {
+      const documentName = documentUri.split("/").pop();
+      const documentType = "application/pdf"; // Cambiar según el tipo de archivo
+  
+      const formData = new FormData();
+      formData.append("usuario_id", user.id);
+      formData.append("nombre", String(documentName));
+      if (documentUri) {
+      formData.append("archivo", {
+        uri: documentUri,
+        name: documentName,
+        type: documentType,
+      } as any);
+    }
+  
+      const response = await axios.post(
+        "https://malo-backend-documentos.onrender.com/api/Documento/PostAgregarDoc",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+  
+      console.log("Respuesta del servidor:", response.data);
+      Alert.alert("Éxito", "Documento subido correctamente.");
+    } catch (error: any) {
+      console.error("Error de Axios (Documento):", error.response?.data || error.message);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Error en la respuesta del servidor"
+      );
+    }
+  };
+  
+  
   return (
     <View style={styles.container}>
       {loading && (
@@ -256,21 +348,30 @@ export default function PerfilScreen() {
         </View>
 
         {/* Botón para subir CV */}
+       
         <View style={styles.section}>
-          <TouchableOpacity style={styles.documentButton}>
-            <FontAwesome
-              name="upload"
-              size={18}
-              color="gray"
-              style={styles.documentIcon}
-            />
-            <Text style={styles.documentButtonText}>Subir CV</Text>
-          </TouchableOpacity>
-          {documento && (
-            <Text style={styles.documentText}>{documento.name}</Text>
-          )}
-        </View>
+        <TouchableOpacity onPress={handlePickDocument} style={styles.documentButton}>
+        <Text style={styles.documentButtonText}>
+        {documentosUsuario.length > 0 ? "Actualizar PDF" : "Subir PDF"}
+        </Text>
+        </TouchableOpacity>
+        
 
+        {documento && <Text style={styles.documentText}>{documento.documentName}</Text>}
+        <View>
+      {documentosUsuario.length > 0 ? (
+        documentosUsuario.map((doc) => (
+          <Text key={doc.id} style={{ margin: 5, fontSize: 16 }}>
+            {doc.nombre}
+          </Text>
+        ))
+      ) : (
+        <Text>No hay documentos asociados a este usuario.</Text>
+      )}
+    </View>
+      </View>
+       
+      
         {/* Botón para guardar */}
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>Editar perfil</Text>
@@ -430,5 +531,19 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: "#FFFFFF",
     fontWeight: "bold",
+  },
+  documentButton: {
+    padding: 10,
+    backgroundColor: '#E0F7FA',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  documentButtonText: {
+    fontSize: 16,
+    color: '#007BFF',
+  },
+  documentText: {
+    marginTop: 10,
+    color: '#000',
   },
 });
