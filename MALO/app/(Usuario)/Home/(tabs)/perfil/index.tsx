@@ -11,8 +11,8 @@ import {
   Button,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
 import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { AuthContext } from "@app/context/AuthContext";
@@ -20,9 +20,11 @@ import axios from "axios";
 import { router } from "expo-router";
 
 export default function PerfilScreen() {
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
-  const { user,logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
+  const authContext = useContext(AuthContext);
+  const { isAuthenticated, logout } = authContext!;
   const [imagenPerfil, setImagenPerfil] = useState<string>("");
   const [habilidades, setHabilidades] = useState<string[]>([
     "Skill aquí",
@@ -40,8 +42,8 @@ export default function PerfilScreen() {
     estado: "",
     municipio: "",
     localidad: "",
-    habilidades:"",
-    descripcion:""
+    habilidades: "",
+    descripcion: "",
   });
 
   useEffect(() => {
@@ -59,10 +61,10 @@ export default function PerfilScreen() {
 
       const datosUsuario = response.data;
       const habilidadesProcesadas = datosUsuario.habilidadesDescripciones
-      ? datosUsuario.habilidadesDescripciones
-          .split(',')
-          .map((habilidUsuario: string) => habilidUsuario.trim())
-      : [];
+        ? datosUsuario.habilidadesDescripciones
+            .split(",")
+            .map((habilidUsuario: string) => habilidUsuario.trim())
+        : [];
       setHabilidades(habilidadesProcesadas);
       // Actualiza los estados con los datos recibidos
       setImagenPerfil(datosUsuario.imagenPerfil || "");
@@ -80,7 +82,7 @@ export default function PerfilScreen() {
         municipio: datosUsuario.municipio,
         localidad: datosUsuario.localidad,
         habilidades: habilidadesProcesadas,
-        descripcion:datosUsuario.descripcion,
+        descripcion: datosUsuario.descripcion,
       });
     } catch (error) {
       console.error("Error al cargar los datos del usuario:", error);
@@ -168,9 +170,10 @@ export default function PerfilScreen() {
         estado: usuario.estado,
         municipio: usuario.municipio,
         localidad: usuario.localidad,
-        habilidades:usuario.habilidades,
-        descripcion:usuario.descripcion,
+        habilidades: usuario.habilidades,
+        descripcion: usuario.descripcion,
         imagen: encodeURIComponent(imagenPerfil),
+        experiencias: experiencias,
       },
     });
   };
@@ -183,7 +186,9 @@ export default function PerfilScreen() {
         const response = await axios.get<Documento[]>(
           "https://malo-backend-documentos.onrender.com/api/Documento/GetDocumentos"
         );
-        const documentosFiltrados = response.data.filter((doc) => doc.usuario_id === user.id);
+        const documentosFiltrados = response.data.filter(
+          (doc) => doc.usuario_id === user.id
+        );
         setDocumentosUsuario(documentosFiltrados);
       } catch (error) {
         console.error("Error al obtener documentos:", error);
@@ -191,31 +196,49 @@ export default function PerfilScreen() {
     };
 
     fetchAndFilterDocumentos();
-  }, [user.id]);
-/////
+  }, [user?.id]);
+  /////
   const handlePickDocument = async () => {
+    if (documentosUsuario.length > 0) {
+      // Si ya existe un documento, preguntar si quiere actualizarlo
+      Alert.alert(
+        "Información",
+        "Ya tienes un documento asociado. ¿Quieres actualizarlo?",
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Actualizar",
+            onPress: () => handleUpdateDocument(), // Llama a la función para actualizar
+          },
+        ]
+      );
+      return;
+    }
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*', // Permite seleccionar cualquier tipo de archivo
+        type: "*/*", // Permite seleccionar cualquier tipo de archivo
         copyToCacheDirectory: true, // Asegura que el archivo esté accesible localmente
       });
-  
+
       console.log("Resultado del DocumentPicker:", result);
-  
+
       // Verificar si la operación fue cancelada
       if (result.canceled) {
-        Alert.alert("Operación cancelada", "No se seleccionó ningún documento.");
+        Alert.alert(
+          "Operación cancelada",
+          "No se seleccionó ningún documento."
+        );
         return;
       }
-  
+
       // Obtener el URI del primer archivo
       const documentUri = result.assets && result.assets[0]?.uri;
-  
+
       if (!documentUri) {
         Alert.alert("Error", "No se encontró la URI del archivo seleccionado.");
         return;
       }
-  
+
       setDocumento(documentUri); // Guardar el documento seleccionado
       setLoading(true);
       await uploadDocument(documentUri); // Subir el archivo
@@ -225,23 +248,23 @@ export default function PerfilScreen() {
       Alert.alert("Error", "No se pudo seleccionar el documento.");
     }
   };
-  
+
   const uploadDocument = async (documentUri: string) => {
     try {
       const documentName = documentUri.split("/").pop();
       const documentType = "application/pdf"; // Cambiar según el tipo de archivo
-  
+
       const formData = new FormData();
       formData.append("usuario_id", user.id);
       formData.append("nombre", String(documentName));
       if (documentUri) {
-      formData.append("archivo", {
-        uri: documentUri,
-        name: documentName,
-        type: documentType,
-      } as any);
-    }
-  
+        formData.append("archivo", {
+          uri: documentUri,
+          name: documentName,
+          type: documentType,
+        } as any);
+      }
+
       const response = await axios.post(
         "https://malo-backend-documentos.onrender.com/api/Documento/PostAgregarDoc",
         formData,
@@ -251,20 +274,96 @@ export default function PerfilScreen() {
           },
         }
       );
-  
+
       console.log("Respuesta del servidor:", response.data);
       Alert.alert("Éxito", "Documento subido correctamente.");
     } catch (error: any) {
-      console.error("Error de Axios (Documento):", error.response?.data || error.message);
+      console.error(
+        "Error de Axios (Documento):",
+        error.response?.data || error.message
+      );
       Alert.alert(
         "Error",
         error.response?.data?.message || "Error en la respuesta del servidor"
       );
     }
   };
-  
-  
-  
+
+  const handleUpdateDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "*/*", // Permite seleccionar cualquier tipo de archivo
+        copyToCacheDirectory: true, // Asegura que el archivo esté accesible localmente
+      });
+
+      console.log("Resultado del DocumentPicker:", result);
+
+      // Verificar si la operación fue cancelada
+      if (result.canceled) {
+        Alert.alert(
+          "Operación cancelada",
+          "No se seleccionó ningún documento."
+        );
+        return;
+      }
+
+      // Obtener el URI del primer archivo
+      const documentUri = result.assets && result.assets[0]?.uri;
+
+      if (!documentUri) {
+        Alert.alert("Error", "No se encontró la URI del archivo seleccionado.");
+        return;
+      }
+
+      setDocumento(documentUri); // Guardar el documento seleccionado
+      setLoading(true);
+      await updateDocument(documentUri); // Subir el archivo
+      setLoading(false);
+    } catch (error) {
+      console.error("Error al seleccionar el documento:", error);
+      Alert.alert("Error", "No se pudo seleccionar el documento.");
+    }
+  };
+  const updateDocument = async (documentUri: string) => {
+    try {
+      const documentName = documentUri.split("/").pop();
+      const documentType = "application/pdf"; // Cambiar según el tipo de archivo
+
+      const formData = new FormData();
+      formData.append("usuario_id", user.id);
+      formData.append("nombre", String(documentName));
+      if (documentUri) {
+        formData.append("archivo", {
+          uri: documentUri,
+          name: documentName,
+          type: documentType,
+        } as any);
+      }
+
+      const response = await axios.post(
+        "https://malo-backend-documentos.onrender.com/api/Documento/ActualizarDocumento",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      console.log("Respuesta del servidor:", response.data);
+      Alert.alert("Éxito", "Documento subido correctamente.");
+    } catch (error: any) {
+      console.error(
+        "Error de Axios (Documento):",
+        error.response?.data || error.message
+      );
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Error en la respuesta del servidor"
+      );
+    }
+  };
+
   return (
     <View style={styles.container}>
       {loading && (
@@ -286,8 +385,8 @@ export default function PerfilScreen() {
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={() => {
-              logout(); 
-              router.navigate("/login"); 
+              logout();
+              router.replace("/login");
             }}
           >
             <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
@@ -349,46 +448,64 @@ export default function PerfilScreen() {
 
         {/* Habilidades */}
         <View style={styles.section}>
-  <Text style={styles.sectionTitle}>Habilidades</Text>
-  <View style={styles.skillsContainer}>
-    {habilidades.map((skill, index) => (
-      <TouchableOpacity key={index} style={styles.skillButton}>
-        <Text style={styles.skillText}>{skill} ✕</Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-</View>
-
+          <Text style={styles.sectionTitle}>Habilidades</Text>
+          <View style={styles.skillsContainer}>
+            {habilidades.map((skill, index) => (
+              <TouchableOpacity key={index} style={styles.skillButton}>
+                <Text style={styles.skillText}>{skill}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
         {/* Botón para subir CV */}
-       
-        <View style={styles.section}>
-        <TouchableOpacity onPress={handlePickDocument} style={styles.documentButton}>
-        <Text style={styles.documentButtonText}>
-        {documentosUsuario.length > 0 ? "Actualizar PDF" : "Subir PDF"}
-        </Text>
-        </TouchableOpacity>
-        
+        {isAuthenticated ? (
+          <View style={styles.section}>
+            <TouchableOpacity
+              onPress={handlePickDocument}
+              style={styles.documentButton}
+            >
+              <Text style={styles.documentButtonText}>
+                {documentosUsuario.length > 0 ? "Actualizar PDF" : "Subir PDF"}
+              </Text>
+            </TouchableOpacity>
 
-        {documento && <Text style={styles.documentText}>{documento.documentName}</Text>}
-        <View>
-      {documentosUsuario.length > 0 ? (
-        documentosUsuario.map((doc) => (
-          <Text key={doc.id} style={{ margin: 5, fontSize: 16 }}>
-            {doc.nombre}
-          </Text>
-        ))
-      ) : (
-        <Text>No hay documentos asociados a este usuario.</Text>
-      )}
-    </View>
-      </View>
-       
-      
+            {documento && (
+              <Text style={styles.documentText}>{documento.documentName}</Text>
+            )}
+            <View>
+              {documentosUsuario.length > 0 ? (
+                documentosUsuario.map((doc) => (
+                  <Text key={doc.id} style={{ margin: 5, fontSize: 16 }}>
+                    {doc.nombre}
+                  </Text>
+                ))
+              ) : (
+                <Text>No hay documentos asociados a este usuario.</Text>
+              )}
+            </View>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.applyButton}
+            onPress={() => router.push("/login")}
+          >
+            <Text style={{ color: "red", textAlign: "center" }}>
+              Inicia Sesion para ver tus postulaciones
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {/* Botón para guardar */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Editar perfil</Text>
-        </TouchableOpacity>
+        {isAuthenticated ? (
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <Text style={styles.saveButtonText}>Editar perfil</Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={{ color: "red", textAlign: "center" }}>
+            Inicia Sesion para ver tus postulaciones
+          </Text>
+        )}
       </ScrollView>
     </View>
   );
@@ -399,15 +516,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#3066be",
   },
+  applyButton: {
+    marginTop: 8,
+    backgroundColor: "#dddd",
+    padding: 10,
+    borderRadius: 8,
+  },
   loadingContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)', // Fondo semi-transparente
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.7)", // Fondo semi-transparente
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1, // Asegura que el spinner esté por encima del contenido
   },
   header: {
@@ -535,17 +658,17 @@ const styles = StyleSheet.create({
   },
   documentButton: {
     padding: 10,
-    backgroundColor: '#E0F7FA',
+    backgroundColor: "#E0F7FA",
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   documentButtonText: {
     fontSize: 16,
-    color: '#007BFF',
+    color: "#007BFF",
   },
   documentText: {
     marginTop: 10,
-    color: '#000',
+    color: "#000",
   },
   skillsContainer: {
     flexDirection: "row",
@@ -567,5 +690,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#fff",
   },
-  
 });

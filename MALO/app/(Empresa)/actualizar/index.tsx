@@ -8,12 +8,14 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  ActivityIndicator, // Import ActivityIndicator
+  ActivityIndicator,
+  Modal, // Import ActivityIndicator
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { AuthContext } from "@app/context/AuthContext";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import axios from "axios";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function ActualizarEmpleo() {
   const { user } = useContext(AuthContext);
@@ -26,7 +28,6 @@ export default function ActualizarEmpleo() {
     salario_minimo,
     ubicacion,
     salario_maximo,
-    horario,
     multimediaContenido,
   } = useLocalSearchParams();
 
@@ -36,9 +37,20 @@ export default function ActualizarEmpleo() {
   const [ubicacionA, setUbicacion] = useState<string>(ubicacion || "");
   const [salarioMinimoA, setSalarioMinimo] = useState<number>(salario_minimo ? Number(salario_minimo) : 0);
   const [salarioMaximoA, setSalarioMaximo] = useState<number>(salario_maximo ? Number(salario_maximo) : 0);
-  const [horarioA, setHorario] = useState<string>(horario || "");
+/*   const [horarioA, setHorario] = useState<string>(horario || ""); */
   const [multimediaContenidoA, setMultimediaContenido] = useState<string>(multimediaContenido || "");
+  const [horario, setHorario] = useState<string>("");
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [scheduleFilter, setScheduleFilter] = useState<string>("");
 
+  const scheduleOptions = [
+    "Tiempo completo",
+    "Medio tiempo",
+    "Mañana",
+    "Noche",
+    "Tarde",
+    "",
+  ];
   // Loading state for the spinner
   const [loading, setLoading] = useState(false);
 
@@ -132,7 +144,7 @@ export default function ActualizarEmpleo() {
       ubicacion: ubicacionA,
       salario_minimo: salarioMinimoA,
       salario_maximo: salarioMaximoA,
-      horario: horarioA
+      horario: scheduleFilter
     };
   
     try {
@@ -159,6 +171,28 @@ export default function ActualizarEmpleo() {
     }
   };
   
+
+  const renderDropdown = (options, setFilter, isOpen, setIsOpen) => (
+    <Modal visible={isOpen} transparent animationType="fade">
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          {options.map((option) => (
+            <TouchableOpacity
+            key={option}
+            style={styles.modalOption}
+            onPress={() => {
+              setFilter(option);
+              setIsOpen(false); // Cierra el modal al seleccionar una opción
+            }}
+          >
+              <Text>{option}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <>
       <Stack.Screen
@@ -204,12 +238,24 @@ export default function ActualizarEmpleo() {
             keyboardType="numeric"
           />
 
-          <Text style={styles.label}>Horario</Text>
-          <TextInput
-            style={styles.input}
-            value={horarioA}
-            onChangeText={setHorario}
-          />
+<Text style={styles.label}>Horario</Text>
+      
+      {/* Botón para abrir el dropdown */}
+      <TouchableOpacity
+        style={styles.filterButton}
+        onPress={() => setIsScheduleOpen(true)}
+      >
+        <Text>{scheduleFilter || "Seleccionar Horario"}</Text>
+        <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
+      </TouchableOpacity>
+      
+      {/* Llamar a la función que renderiza el dropdown */}
+      {renderDropdown(
+        scheduleOptions,
+        setScheduleFilter,
+        isScheduleOpen,
+        setIsScheduleOpen
+      )}
 
           <Text style={styles.label}>Multimedia</Text>
           {multimediaContenidoA ? (
@@ -288,5 +334,33 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderRadius: 10,
+    borderColor: "#DDD",
+    flex: 1,
+  },
+   modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "white",
+    borderRadius: 8,
+    paddingVertical: 10,
+  },
+  modalOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
+    alignItems: "center",
   },
 });

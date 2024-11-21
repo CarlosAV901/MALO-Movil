@@ -79,9 +79,9 @@ export default function LoginScreen() {
       await login(email, contrasena, isEmpresa);
 
       if (isEmpresa) {
-        router.replace("/(Empresa)/home/(tabs)/actualizarEliminar");
+        router.navigate("/(Empresa)/home/(tabs)/actualizarEliminar");
       } else {
-        router.replace("/(Usuario)/Home/(tabs)/buscar");
+        router.navigate("/(Usuario)/Home/(tabs)/buscar");
       }
     } catch (error: any) {
       Alert.alert("Error", error.message);

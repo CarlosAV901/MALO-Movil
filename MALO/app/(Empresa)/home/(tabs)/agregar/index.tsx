@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image, Modal } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image, Modal, ActivityIndicator } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { AuthContext } from "@app/context/AuthContext";
 import { router } from "expo-router";
@@ -16,6 +16,7 @@ export default function AgregarEmpleo() {
   const [multimediaContenido, setMultimediaContenido] = useState<string>("");
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [scheduleFilter, setScheduleFilter] = useState("");
+  const [loading, setLoading] = useState<boolean>(false);  
   const scheduleOptions = [
     "Tiempo completo",
     "Medio tiempo",
@@ -47,7 +48,7 @@ export default function AgregarEmpleo() {
       Alert.alert("Error", "No se pudo encontrar el ID de la empresa.");
       return;
     }
-  
+    setLoading(true); 
     const multimediaNombre = multimediaContenido.split('/').pop();
     const multimediaTipo = 'image/jpeg';
   
@@ -58,7 +59,7 @@ export default function AgregarEmpleo() {
     formData.append("ubicacion", ubicacion);
     formData.append("salario_minimo", salarioMinimo.toString());
     formData.append("salario_maximo", salarioMaximo.toString());
-    formData.append("horario", horario);
+    formData.append("horario", scheduleFilter);
     formData.append("multimediaNombre", multimediaNombre || "");
     formData.append("multimediaTipo", multimediaTipo);
     formData.append("archivo", {
@@ -86,6 +87,8 @@ export default function AgregarEmpleo() {
       router.push("/(Empresa)/home/(tabs)");
     } catch (error: any) {
       Alert.alert("Error", error.message);
+    }finally {
+      setLoading(false);  
     }
   };
   
@@ -95,13 +98,13 @@ export default function AgregarEmpleo() {
         <View style={styles.modalContent}>
           {options.map((option) => (
             <TouchableOpacity
-              key={option}
-              style={styles.modalOption}
-              onPress={() => {
-                setFilter(option);
-                setIsOpen(false);
-              }}
-            >
+            key={option}
+            style={styles.modalOption}
+            onPress={() => {
+              setFilter(option);
+              setIsOpen(false); // Cierra el modal al seleccionar una opción
+            }}
+          >
               <Text>{option}</Text>
             </TouchableOpacity>
           ))}
@@ -133,20 +136,23 @@ export default function AgregarEmpleo() {
         <Text style={styles.label}>Salario Máximo</Text>
         <TextInput style={styles.input} value={String(salarioMaximo)} onChangeText={(text) => setSalarioMaximo(Number(text))} placeholder="Salario Máximo" keyboardType="numeric" />
         <Text style={styles.label}>Horario</Text>
-        <TextInput style={styles.input} value={horario} onChangeText={setHorario} placeholder="Horario" />
-        {renderDropdown(
+      
+      {/* Botón para abrir el dropdown */}
+      <TouchableOpacity
+        style={styles.filterButton}
+        onPress={() => setIsScheduleOpen(true)}
+      >
+        <Text>{scheduleFilter || "Seleccionar Horario"}</Text>
+        <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
+      </TouchableOpacity>
+      
+      {/* Llamar a la función que renderiza el dropdown */}
+      {renderDropdown(
         scheduleOptions,
         setScheduleFilter,
         isScheduleOpen,
         setIsScheduleOpen
       )}
-        <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setIsScheduleOpen(true)}
-          >
-            <Text>{scheduleFilter || "Horario"}</Text>
-            <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
-          </TouchableOpacity>
         {/* Selector de imagen */}
         <Text style={styles.label}>Multimedia</Text>
         {multimediaContenido ? (
@@ -159,8 +165,12 @@ export default function AgregarEmpleo() {
         </TouchableOpacity>
 
         {/* Botón de envío */}
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Agregar Empleo</Text>
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.submitButtonText}>Agregar Empleo</Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -225,10 +235,9 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: "#FFF",
     borderWidth: 1,
-    borderRadius: 30,
+    borderRadius: 10,
     borderColor: "#DDD",
     flex: 1,
-    marginLeft: 8,
   },
    modalContainer: {
     flex: 1,

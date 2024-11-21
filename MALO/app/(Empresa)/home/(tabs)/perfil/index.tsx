@@ -15,7 +15,9 @@ import { router } from "expo-router";
 
 export default function ActualizarEmpresa() {
   const navigation = useNavigation();
-  const { user, logout } = useContext(AuthContext); // `logout` para cerrar sesión
+  const { user } = useContext(AuthContext); // `logout` para cerrar sesión
+  const authContext = useContext(AuthContext);
+  const { isAuthenticated, logout } = authContext!; 
   const [empresa, setEmpresa] = useState({
     nombre: "",
     email: "",
@@ -68,7 +70,7 @@ export default function ActualizarEmpresa() {
 
   const handleLogout = () => {
     logout(); // Cierra sesión
-    router.navigate("/login"); // Redirige al login
+    router.replace("/login"); // Redirige al login
   };
 
   return (

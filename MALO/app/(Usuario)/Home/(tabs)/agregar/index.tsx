@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react"; 
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
@@ -25,7 +25,8 @@ export default function JobSearchScreen() {
   const [location, setLocation] = useState("");
   const [scheduleFilter, setScheduleFilter] = useState("");
   const [salaryFilter, setSalaryFilter] = useState("");
-
+  const authContext = useContext(AuthContext);
+  const { isAuthenticated, logout } = authContext!;
   const fetchJobs = async () => {
     try {
       const response = await fetch(
@@ -106,7 +107,7 @@ export default function JobSearchScreen() {
       {/* <Image source={{ uri: item.multimediaContenido }} style={styles.jobImage} /> */}
       <View style={styles.jobDetails}>
         <Text style={styles.jobTitle}>{item.titulo}</Text>
-       {/*  <Text style={styles.companyName}>
+        {/*  <Text style={styles.companyName}>
           <FontAwesome name="check" size={20} color="gray" /> {item.descripcion}
         </Text> */}
         <TouchableOpacity
@@ -136,30 +137,56 @@ export default function JobSearchScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <FontAwesome name="arrow-left" size={24} color="black" />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>Postulaciones</Text>
-        <TouchableOpacity>
-          <FontAwesome name="user-circle" size={40} color="black" />
-        </TouchableOpacity>
-      </View>
-
-      
-
-      {loading ? (
-        <ActivityIndicator size="large" color="#007BFF" />
+      {isAuthenticated ? (
+        <>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()}>
+              <FontAwesome name="arrow-left" size={24} color="black" />
+            </TouchableOpacity>
+            <Text style={styles.headerText}>Postulaciones</Text>
+            <TouchableOpacity>
+              <FontAwesome name="user-circle" size={40} color="black" />
+            </TouchableOpacity>
+          </View>
+          <>
+            {loading ? (
+              <ActivityIndicator size="large" color="#007BFF" />
+            ) : (
+              <FlatList
+                data={filteredJobs}
+                renderItem={renderJobItem}
+                keyExtractor={(item) => item.empleoId}
+                contentContainerStyle={styles.jobList}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                  />
+                }
+              />
+            )}
+          </>
+        </>
       ) : (
-        <FlatList
-          data={filteredJobs}
-          renderItem={renderJobItem}
-          keyExtractor={(item) => item.empleoId}
-          contentContainerStyle={styles.jobList}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        />
+        <>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()}>
+              <FontAwesome name="arrow-left" size={24} color="black" />
+            </TouchableOpacity>
+            <Text style={styles.headerText}>Postulaciones</Text>
+            <TouchableOpacity>
+              <FontAwesome name="user-circle" size={40} color="black" />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.applyButton}
+            onPress={() => router.push("/login")}
+          >
+            <Text style={{ color: "red", textAlign: "center" }}>
+              Inicia Sesion para ver tus postulaciones
+            </Text>
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );

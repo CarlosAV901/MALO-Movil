@@ -17,6 +17,7 @@ export default function AgregarEmpleo() {
         municipio,
         localidad,
         imagen,
+        experiencias
       } = useLocalSearchParams();
   const { user } = useContext(AuthContext);
   const [nombreA, setNombre] = useState<string>(nombre || "");
@@ -24,7 +25,7 @@ export default function AgregarEmpleo() {
   const [emailA, setEmail] = useState<string>(email || "");
   const [telefonoA, setTelefono] = useState<string>(telefono || "");
   const [habilidades, setHabilidades] = useState<string>( "");
-  const [descripcionA, setDescripcion] = useState<string>("");
+  const [descripcionA, setDescripcion] = useState<string>(experiencias ||"");
   const [imagenPerfil, setImagenPerfil] = useState<string>( imagen ||"");
   const [selectedState, setSelectedState] = useState('');
   const [selectedMunicipality, setSelectedMunicipality] = useState('');
@@ -36,7 +37,10 @@ export default function AgregarEmpleo() {
   const [isMunicipalityModalVisible, setIsMunicipalityModalVisible] = useState(false);
   const [isLocalityModalVisible, setIsLocalityModalVisible] = useState(false);
   const [loading, setLoading] = useState(false); 
-  
+  const [availableHabilidades, setAvailableHabilidades] = useState([]); // Lista de habilidades desde la API
+  const [selectedHabilidades, setSelectedHabilidades] = useState<number[]>([]); // IDs seleccionados
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
   const handleSubmit = async () => {
     if (!user?.token) {
       Alert.alert("Error", "No se pudo encontrar el token de autenticación.");
@@ -53,7 +57,7 @@ export default function AgregarEmpleo() {
     estado:estados,
     municipio: municipios,
     localidad: localidades,
-    habilidades:"2,6",
+    habilidades:habilidades,
     descripcion: descripcionA,
     }
   console.log("aaa",estados)
@@ -122,7 +126,44 @@ export default function AgregarEmpleo() {
     setLocalidades(localidad.nomgeo); // Guarda solo el nombre de la localidad seleccionada
     setIsLocalityModalVisible(false);
   };
- 
+  const fetchHabilidades = async () => {
+    try {
+      const response = await axios.post(
+        "https://malo-backend.onrender.com/api/Habilidad/Obtener-habilidades",
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${user?.token}`,
+          },
+        }
+      );
+      setAvailableHabilidades(response.data); // Asigna las habilidades obtenidas
+    } catch (error) {
+      console.error("Error obteniendo habilidades:", error.response?.data || error.message);
+      Alert.alert("Error", "No se pudieron cargar las habilidades.");
+    }
+  };
+
+  useEffect(() => {
+    fetchHabilidades();
+  }, []);
+
+  // Función para seleccionar o deseleccionar una habilidad
+  const toggleHabilidad = (id: number) => {
+    setSelectedHabilidades((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((habilidadId) => habilidadId !== id); // Deseleccionar
+      }
+      return [...prev, id]; // Seleccionar
+    });
+  };
+
+  // Almacena las habilidades seleccionadas como un string separado por comas
+  const handleSaveHabilidades = () => {
+    setHabilidades(selectedHabilidades.join(","));
+    setIsModalVisible(false); // Cierra el modal
+  };
   return (
     <>
     <Stack.Screen
@@ -145,6 +186,41 @@ export default function AgregarEmpleo() {
         <TextInput style={styles.input} value={telefonoA} onChangeText={setTelefono} placeholder="Telefono" />
         <Text style={styles.label}>Descripcion</Text>
         <TextInput style={styles.input} value={descripcionA} onChangeText={setDescripcion} placeholder="descripcion" />
+      
+      <Text style={styles.label}>Habilidades</Text>
+      <TouchableOpacity style={styles.dropdown} onPress={() => setIsModalVisible(true)}>
+        <Text>
+          {selectedHabilidades.length > 0
+            ? `Seleccionadas: ${selectedHabilidades.length}`
+            : "Seleccionar Habilidades"}
+        </Text>
+        <MaterialIcons name="arrow-drop-down" size={30} color="black" />
+      </TouchableOpacity>
+
+      {/* Modal para seleccionar habilidades */}
+      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalContainer}>
+          <FlatList
+            data={availableHabilidades}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.modalItem,
+                  selectedHabilidades.includes(item.id) && styles.selectedItem,
+                ]}
+                onPress={() => toggleHabilidad(item.id)}
+              >
+                <Text>{item.descripcion}</Text>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity style={styles.modalCloseButton} onPress={handleSaveHabilidades}>
+            <Text style={styles.closeModalText}>Guardar</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+      <Text style={styles.label}>Ubicación</Text>
         {/* Dropdown para Estado */}
         <TouchableOpacity style={styles.dropdown} onPress={() => setIsStateModalVisible(true)}>
           <Text>{selectedState ? selectedState.nomgeo : 'Seleccionar Estado'}</Text>

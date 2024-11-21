@@ -39,7 +39,25 @@ export default function JobSearchScreen() {
     "Tarde",
     "",
   ];
-  const salaryOptions = ["1000", "2000", "3000", ""];
+  const salaryOptions = [
+    "1000",
+    "2000",
+    "3000",
+    "4000",
+    "5000",
+    "6000",
+    "7000",
+    "8000",
+    "1000",
+    "2000",
+    "3000",
+    "4000",
+    "10000",
+    "20000",
+    "30000",
+    "40000",
+    "",
+  ];
   const authContext = useContext(AuthContext);
   const { isAuthenticated, logout } = authContext!;
 
@@ -151,16 +169,14 @@ export default function JobSearchScreen() {
         <Text style={styles.companyName}>
           {companyNames[item.empresa_id] || "Nombre no disponible"}
         </Text>
+        <Text style={styles.applicants}>{item.horario}</Text>
         <Text style={styles.applicants}>
-         {item.horario}
-        </Text>
-        <Text style={styles.applicants}>
-        Minimo: ${item.salario_minimo}, Maximo: ${item.salario_maximo}
+          Minimo: ${item.salario_minimo}, Maximo: ${item.salario_maximo}
         </Text>
         <Text style={styles.applicants}>
           Postulados: {applicantsCount[item.empleoId] || 0}
         </Text>
-       
+
         {isAuthenticated ? (
           <TouchableOpacity
             style={styles.applyButton}
@@ -319,14 +335,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
   },
   loadingContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)', // Fondo semi-transparente
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.7)", // Fondo semi-transparente
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1, // Asegura que el spinner esté por encima del contenido
   },
   header: {
