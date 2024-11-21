@@ -254,7 +254,7 @@ export default function JobSearchScreen() {
           <FontAwesome name="arrow-left" size={24} color="black" />
         </TouchableOpacity>
         <Text style={styles.headerText}>Buscar empleos</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.navigate('/(Usuario)/Home/(tabs)/perfil')}>
           <FontAwesome name="user-circle" size={40} color="black" />
         </TouchableOpacity>
       </View>
