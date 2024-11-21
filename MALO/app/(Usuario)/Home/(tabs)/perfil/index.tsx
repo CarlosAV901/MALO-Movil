@@ -22,7 +22,7 @@ import { router } from "expo-router";
 export default function PerfilScreen() {
   const [loading, setLoading] = useState(false); 
   const navigation = useNavigation();
-  const { user } = useContext(AuthContext);
+  const { user,logout } = useContext(AuthContext);
   const [imagenPerfil, setImagenPerfil] = useState<string>("");
   const [habilidades, setHabilidades] = useState<string[]>([
     "Skill aquí",
@@ -40,6 +40,8 @@ export default function PerfilScreen() {
     estado: "",
     municipio: "",
     localidad: "",
+    habilidades:"",
+    descripcion:""
   });
 
   useEffect(() => {
@@ -56,13 +58,18 @@ export default function PerfilScreen() {
       );
 
       const datosUsuario = response.data;
-
+      const habilidadesProcesadas = datosUsuario.habilidadesDescripciones
+      ? datosUsuario.habilidadesDescripciones
+          .split(',')
+          .map((habilidUsuario: string) => habilidUsuario.trim())
+      : [];
+      setHabilidades(habilidadesProcesadas);
       // Actualiza los estados con los datos recibidos
       setImagenPerfil(datosUsuario.imagenPerfil || "");
       setExperiencias(
         datosUsuario.experiencias || "No has agregado experiencias."
       );
-      setHabilidades(datosUsuario.habilidadesDescripciones || []);
+
       setUsuario({
         nombre: datosUsuario.nombre,
         apellido: datosUsuario.apellido,
@@ -72,6 +79,8 @@ export default function PerfilScreen() {
         estado: datosUsuario.estado,
         municipio: datosUsuario.municipio,
         localidad: datosUsuario.localidad,
+        habilidades: habilidadesProcesadas,
+        descripcion:datosUsuario.descripcion,
       });
     } catch (error) {
       console.error("Error al cargar los datos del usuario:", error);
@@ -159,6 +168,8 @@ export default function PerfilScreen() {
         estado: usuario.estado,
         municipio: usuario.municipio,
         localidad: usuario.localidad,
+        habilidades:usuario.habilidades,
+        descripcion:usuario.descripcion,
         imagen: encodeURIComponent(imagenPerfil),
       },
     });
@@ -253,6 +264,7 @@ export default function PerfilScreen() {
   };
   
   
+  
   return (
     <View style={styles.container}>
       {loading && (
@@ -273,7 +285,10 @@ export default function PerfilScreen() {
           <Text style={styles.headerTitle}>Perfil</Text>
           <TouchableOpacity
             style={styles.logoutButton}
-            onPress={() => Alert.alert("Cerrar sesión", "Sesión cerrada.")}
+            onPress={() => {
+              logout(); 
+              router.navigate("/login"); 
+            }}
           >
             <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
           </TouchableOpacity>
@@ -334,18 +349,16 @@ export default function PerfilScreen() {
 
         {/* Habilidades */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Habilidades</Text>
-          <View style={styles.skillsContainer}>
-            {habilidades.map((skill, index) => (
-              <TouchableOpacity key={index} style={styles.skillButton}>
-                <Text style={styles.skillText}>{skill} ✕</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity style={styles.addSkillButton}>
-              <Text style={styles.addSkillText}>Otro +</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+  <Text style={styles.sectionTitle}>Habilidades</Text>
+  <View style={styles.skillsContainer}>
+    {habilidades.map((skill, index) => (
+      <TouchableOpacity key={index} style={styles.skillButton}>
+        <Text style={styles.skillText}>{skill} ✕</Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+</View>
+
 
         {/* Botón para subir CV */}
        
@@ -505,19 +518,7 @@ const styles = StyleSheet.create({
     color: "#666666",
     textAlign: "center",
   },
-  skillsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 5,
-  },
-  skillButton: {
-    backgroundColor: "#E0F7FA",
-    borderRadius: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 5,
-    marginBottom: 5,
-  },
+
   saveButton: {
     backgroundColor: "#007BFF",
     borderRadius: 5,
@@ -546,4 +547,25 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: '#000',
   },
+  skillsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 10,
+  },
+  skillButton: {
+    backgroundColor: "#e0e0e0",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    margin: 5,
+  },
+  skillText: {
+    fontSize: 14,
+    color: "#000",
+  },
+  addSkillText: {
+    fontSize: 14,
+    color: "#fff",
+  },
+  
 });

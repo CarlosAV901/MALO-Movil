@@ -24,13 +24,7 @@ export default function TabLayout() {
           tabBarStyle: { backgroundColor: "white" },
         }}
       >
-        <Tabs.Screen
-          name="index"
-          options={{
-             title:'',
-            tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
-          }}
-        />
+        
         <Tabs.Screen
           name="buscar/index"
           options={{

@@ -45,7 +45,7 @@ export default function AgregarEmpleo() {
     
   
     const userData = {
-    UsuarioId:user.id,
+    usuarioId:user.id,
     nombre: nombreA,
     email: emailA,
     apellido: apellidoA,
@@ -53,9 +53,10 @@ export default function AgregarEmpleo() {
     estado:estados,
     municipio: municipios,
     localidad: localidades,
+    habilidades:"2,6",
     descripcion: descripcionA,
     }
-  
+  console.log("aaa",estados)
     try {
       const response = await axios.post('https://malo-backend.onrender.com/api/Usuario/ActualizarUsuario', userData, {
         headers: {

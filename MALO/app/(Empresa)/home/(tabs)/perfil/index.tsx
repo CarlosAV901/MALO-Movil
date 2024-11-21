@@ -68,7 +68,7 @@ export default function ActualizarEmpresa() {
 
   const handleLogout = () => {
     logout(); // Cierra sesión
-    router.replace("/login"); // Redirige al login
+    router.navigate("/login"); // Redirige al login
   };
 
   return (
